@@ -1,0 +1,16 @@
+   # Pengaturan untuk versi web (dipakai banyak orang)
+   [server]
+   maxUploadSize = 20
+
+   [browser]
+   gatherUsageStats = false
+
+   [client]
+   toolbarMode = "minimal"
+
+   [theme]
+   base = "light"
+   primaryColor = "#4A3AA7"
+   backgroundColor = "#FFFFFF"
+   secondaryBackgroundColor = "#F1F2F6"
+   textColor = "#1B1F2E"
