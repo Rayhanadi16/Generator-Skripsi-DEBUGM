@@ -17,6 +17,7 @@ Kamu cukup mengisi identitas, isi bab, pustaka, dan gambar. Format diatur otomat
 |---|---|
 | `app.py` | Tampilan aplikasi (Streamlit) |
 | `tampilan.py` | Gaya tampilan (warna, huruf) dan diagram margin |
+| `pustaka.py` | Baca DOI dari PDF, ambil data Crossref, susun entri APA 7 |
 | `pengaturan.py` | Mode aplikasi: `web` (bawaan) atau `lokal` |
 | `generator.py` | Mesin pembuat .docx + semua aturan format |
 | `importer.py` | Pembaca & pelacak draft mentah (.docx) |
@@ -138,6 +139,21 @@ ukuran lain, ubah angkanya di tab **Format halaman** (1 sampai 6 cm per sisi, bo
 - Margin ikut tersimpan di autosave dan file progres (.json), jadi tidak perlu diatur ulang.
 - Tombol **Kembalikan ke margin panduan** mengembalikan ke 4-4-3-3.
 - File Word yang sudah dibuat tidak berubah sendiri: klik **Buat file Word** lagi setelah mengubah margin.
+
+## Menambah referensi dari PDF atau DOI (tab Pustaka & lampiran)
+
+Di bawah kotak Daftar pustaka ada bagian **Tambah referensi**:
+
+- **Upload PDF artikel jurnal** lalu klik **Baca PDF**: tools mencari DOI di halaman awal PDF, mengambil
+  rinciannya (penulis, tahun, judul, jurnal, volume, halaman) dari basis data Crossref, lalu menyusunnya
+  dengan gaya APA edisi 7. PDF hanya dibaca di memori dan tidak disimpan.
+- **Tempel DOI** lalu klik **Cari DOI** bila sudah tahu DOI-nya.
+- **Isi sendiri** rinciannya untuk sumber tanpa DOI: buku, jurnal lokal yang tidak terdaftar, halaman web.
+- Periksa pratinjaunya, lalu klik **Tambahkan ke daftar pustaka**. Barisnya masih bisa disunting di kotak
+  Daftar pustaka.
+
+Catatan: pengambilan data butuh internet; judul dari Crossref sering memakai huruf kapital di tiap kata
+(APA meminta hanya kata pertama), jadi periksa dulu. Kodenya ada di `pustaka.py`.
 
 ## Preview (tab Preview)
 

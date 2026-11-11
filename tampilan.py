@@ -122,6 +122,14 @@ header[data-testid="stHeader"] { background:transparent; }
 .catatan-sisi { font-size:0.875rem; margin-bottom:0.6rem; color:var(--redup); line-height:1.55; }
 .catatan-sisi b { color:var(--tinta); font-weight:600; }
 
+/* ---------- pratinjau referensi ---------- */
+.pratinjau-ref { border-left:3px solid var(--stempel); background:#F7F6FD; padding:0.75rem 1rem; margin:0.3rem 0 0.9rem;
+  border-radius:0 3px 3px 0; }
+.pratinjau-ref .hasil { font-family:"Times New Roman",Times,serif; font-size:1.02rem; line-height:1.45;
+  padding-left:2rem; text-indent:-2rem; overflow-wrap:anywhere; }
+.pratinjau-ref .ket { font-size:0.8rem; color:var(--redup); margin-bottom:0.35rem; }
+.pratinjau-ref .kurang { font-size:0.84rem; color:var(--kuning); margin-top:0.5rem; font-weight:600; }
+
 /* ---------- watermark pembuat ---------- */
 .cap-pembuat { position:fixed; right:1.1rem; bottom:0.9rem; z-index:999; pointer-events:none; user-select:none;
   font-family:var(--judul); font-weight:700; font-size:1.05rem; color:var(--stempel); opacity:0.42;
@@ -219,6 +227,15 @@ def kop(margin, bawaan, nama_format):
   <div class="kop-format"><b>{html.escape(nama_format)}</b><br>
     A4, Times New Roman 12, spasi 1,5<br>Margin {ringkas_margin(margin)}{catatan}</div>
 </div>"""
+
+
+def pratinjau_ref(baris, kurang):
+    """Tampilkan satu entri daftar pustaka seperti di hasil Word (*...* menjadi huruf miring)."""
+    import re
+    isi = re.sub(r"\*(.+?)\*", r"<i>\1</i>", html.escape(baris))
+    catatan = f'<div class="kurang">Belum diisi: {html.escape(", ".join(kurang))}</div>' if kurang else ""
+    return (f'<div class="pratinjau-ref"><div class="ket">Hasil yang akan ditambahkan</div>'
+            f'<div class="hasil">{isi}</div>{catatan}</div>')
 
 
 def watermark():

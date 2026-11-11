@@ -14,6 +14,7 @@ from generator import (FORMAT_DEB_SV_UGM, MARGIN_MAX_CM, MARGIN_MIN_CM, SISI_MAR
 from importer import daftar_tujuan, lacak_draft, susun_data, warna
 from preview import halaman_html, kerangka
 import autosave as asv
+import pustaka as pst
 import tampilan as tp
 from pengaturan import MODE_WEB
 
@@ -64,6 +65,8 @@ def isi_default():
             ss[f"bab{i}_s{j}_isi"] = ""
     ss["jml_lampiran"] = 0
     atur_margin(margin_bawaan())
+    isi_ref(pst.KOSONG)
+    ss["rf_doi"] = ""
     ss["_siap"] = True
 
 
@@ -131,6 +134,73 @@ def muat_data(data):
         ss[f"lamp{k}_judul"] = l.get("judul", "")
         ss[f"lamp{k}_isi"] = l.get("isi", "")
         ss[f"lamp{k}_gambar"] = l.get("gambar", "")
+
+
+# ----- bantuan daftar pustaka (isian sementara, tidak ikut file progres) -----
+FIELD_REF = ["jenis", "penulis", "lembaga", "tahun", "judul", "wadah", "volume", "nomor", "halaman", "tautan"]
+
+
+def isi_ref(isian):
+    for k in FIELD_REF:
+        ss[f"rf_{k}"] = isian.get(k, pst.KOSONG[k])
+
+
+def ref_sekarang():
+    return {k: ss.get(f"rf_{k}", pst.KOSONG[k]) for k in FIELD_REF}
+
+
+def _ambil_ref(doi, judul_cadangan=""):
+    try:
+        isi_ref(pst.ambil_crossref(doi))
+        ss["_pesan"] = ("success", "Rincian referensi terisi. Periksa dulu sebelum ditambahkan.")
+    except pst.GagalAmbil as e:
+        isi_ref({**pst.KOSONG, "judul": judul_cadangan, "tautan": f"https://doi.org/{doi}"})
+        ss["_pesan"] = ("warning", str(e))
+
+
+def cb_baca_pdf_ref():
+    berkas = ss.get("upload_ref_pdf")
+    if berkas is None:
+        ss["_pesan"] = ("warning", "Pilih file PDF jurnalnya dulu.")
+        return
+    try:
+        doi, judul = pst.cari_doi(berkas.getvalue())
+    except pst.GagalAmbil as e:
+        ss["_pesan"] = ("error", str(e))
+        return
+    if doi:
+        _ambil_ref(doi, judul)
+    else:
+        isi_ref({**pst.KOSONG, "judul": judul})
+        ss["_pesan"] = ("warning", "DOI tidak ditemukan di PDF ini. Tempel DOI-nya atau isi rinciannya sendiri.")
+
+
+def cb_cari_doi_ref():
+    doi = pst.rapikan_doi(ss.get("rf_doi", ""))
+    if not doi:
+        ss["_pesan"] = ("warning", "DOI tidak dikenali. Contoh: 10.1257/jel.52.1.5")
+        return
+    _ambil_ref(doi)
+
+
+def cb_tambah_ref():
+    baris = pst.format_apa(ref_sekarang())
+    if not ss.get("rf_judul", "").strip():
+        ss["_pesan"] = ("warning", "Isi judulnya dulu.")
+        return
+    lama = [b.strip() for b in ss.get("daftar_pustaka", "").splitlines() if b.strip()]
+    if baris in lama:
+        ss["_pesan"] = ("warning", "Referensi ini sudah ada di daftar pustaka.")
+        return
+    ss["daftar_pustaka"] = "\n".join(lama + [baris])
+    isi_ref(pst.KOSONG)
+    ss["rf_doi"] = ""
+    ss["_pesan"] = ("success", "Referensi ditambahkan ke daftar pustaka.")
+
+
+def cb_kosongkan_ref():
+    isi_ref(pst.KOSONG)
+    ss["rf_doi"] = ""
 
 
 def cb_muat_progres():
@@ -578,6 +648,50 @@ with tab_akhir:
     (st.warning if 0 < n_ref < 10 else st.caption)(
         f"{n_ref} referensi. Panduan meminta minimal 10 artikel jurnal. "
         "Urutan abjad diatur otomatis; pakai `*judul*` untuk huruf miring.")
+
+    st.subheader("Tambah referensi")
+    st.caption("Upload PDF jurnal atau tempel DOI-nya, dan rinciannya diisi otomatis dari basis data Crossref lalu "
+               "disusun dengan gaya APA edisi 7. Sumber tanpa DOI (buku, jurnal lokal, halaman web) bisa diisi sendiri. "
+               "PDF hanya dibaca untuk mencari DOI dan tidak disimpan.")
+    c1, c2 = st.columns(2, gap="medium")
+    with c1:
+        st.file_uploader("PDF artikel jurnal", type=["pdf"], key="upload_ref_pdf")
+        st.button("Baca PDF", on_click=cb_baca_pdf_ref)
+    with c2:
+        st.text_input("Atau tempel DOI", key="rf_doi", placeholder="mis. 10.1257/jel.52.1.5")
+        st.button("Cari DOI", on_click=cb_cari_doi_ref)
+
+    with st.container(border=True):
+        c1, c2 = st.columns([2, 1])
+        c1.selectbox("Jenis sumber", pst.JENIS, key="rf_jenis")
+        c2.text_input("Tahun", key="rf_tahun", placeholder="mis. 2014")
+        jenis_ref = ss.get("rf_jenis", pst.JENIS[0])
+        st.text_area("Penulis (satu per baris)", key="rf_penulis", height=100,
+                     placeholder="Nama belakang, Nama depan\nmis. Lusardi, Annamaria")
+        st.checkbox("Penulisnya lembaga atau instansi (ditulis apa adanya)", key="rf_lembaga")
+        st.text_input("Judul", key="rf_judul")
+        if jenis_ref == "Artikel jurnal":
+            st.text_input("Nama jurnal", key="rf_wadah")
+            c1, c2, c3 = st.columns(3)
+            c1.text_input("Volume", key="rf_volume")
+            c2.text_input("Nomor", key="rf_nomor")
+            c3.text_input("Halaman", key="rf_halaman", placeholder="mis. 5-44")
+            st.text_input("DOI atau tautan", key="rf_tautan")
+        elif jenis_ref == "Buku":
+            st.text_input("Penerbit", key="rf_wadah")
+            st.text_input("DOI atau tautan (opsional)", key="rf_tautan")
+        else:
+            st.text_input("Nama situs atau lembaga penerbit", key="rf_wadah")
+            st.text_input("Alamat web", key="rf_tautan", placeholder="https://")
+
+        isian_ref = ref_sekarang()
+        if any(str(isian_ref[k]).strip() for k in ("penulis", "judul", "wadah")):
+            st.markdown(tp.pratinjau_ref(pst.format_apa(isian_ref), pst.kurang(isian_ref)), unsafe_allow_html=True)
+        c1, c2, _ = st.columns([1.6, 1, 2.4])
+        c1.button("Tambahkan ke daftar pustaka", type="primary", on_click=cb_tambah_ref)
+        c2.button("Kosongkan", on_click=cb_kosongkan_ref)
+    st.caption("Periksa huruf besar-kecil judul dan nama penulis sebelum menambahkan; data dari Crossref tidak selalu "
+               "rapi. Setelah ditambahkan, barisnya masih bisa kamu sunting langsung di kotak Daftar pustaka.")
 
     st.subheader("Lampiran")
     if not ss["jml_lampiran"]:
