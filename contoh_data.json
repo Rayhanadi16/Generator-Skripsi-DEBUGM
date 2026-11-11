@@ -1,0 +1,83 @@
+{
+  "identitas": {
+    "judul_id": "Pengaruh Literasi Keuangan terhadap Keputusan Investasi Mahasiswa di Yogyakarta",
+    "judul_en": "The Effect of Financial Literacy on Students' Investment Decisions in Yogyakarta",
+    "nama": "nama mahasiswa contoh",
+    "nim": "21/000000/SV/00000",
+    "prodi": "Sarjana Terapan Perbankan",
+    "tahun": "2026",
+    "pembimbing": "Dr. Nama Dosen Pembimbing, S.E., M.Sc.",
+    "tahun_terdaftar": "2022",
+    "fakultas": "Sekolah Vokasi",
+    "tempat_ttd": "Yogyakarta",
+    "tanggal_ttd": "7 November 2026"
+  },
+  "pengesahan": {
+    "tanggal_ujian": "20 November 2026",
+    "ketua_nama": "Nama Ketua Penguji, S.E., M.Ec.Dev.",
+    "ketua_nip": "111111111111111111",
+    "pembimbing_nip": "222222222222222222",
+    "anggota_nama": "Nama Anggota Penguji, S.E., M.B.A.",
+    "anggota_nip": "333333333333333333",
+    "mengetahui_jabatan": "",
+    "mengetahui_nama": "Nama Ketua Program Studi, S.E., M.Sc.",
+    "mengetahui_nip": "444444444444444444"
+  },
+  "kata_pengantar": "Puji syukur penulis panjatkan ke hadirat Tuhan Yang Maha Esa atas rahmat dan karunia-Nya sehingga Tugas Akhir ini dapat diselesaikan dengan baik.\nPenulis mengucapkan terima kasih kepada dosen pembimbing, dewan penguji, keluarga, serta teman-teman yang telah memberikan dukungan selama proses penyusunan Tugas Akhir ini.\nPenulis menyadari bahwa Tugas Akhir ini masih memiliki kekurangan. Oleh karena itu, saran dan masukan sangat penulis harapkan.",
+  "intisari": "Penelitian ini bertujuan untuk menganalisis pengaruh literasi keuangan terhadap keputusan investasi mahasiswa. Data diperoleh melalui kuesioner kepada 120 responden dan dianalisis menggunakan regresi linear sederhana. Hasil penelitian menunjukkan bahwa literasi keuangan berpengaruh positif dan signifikan terhadap keputusan investasi.",
+  "kata_kunci": "literasi keuangan, mahasiswa, keputusan investasi",
+  "abstract": "This study aims to analyze the effect of financial literacy on students' investment decisions. Data were collected through questionnaires from 120 respondents and analyzed using simple linear regression. The results show that financial literacy has a positive and significant effect on investment decisions.",
+  "keywords": "investment decision, financial literacy, students",
+  "istilah": "Return: tingkat imbal hasil dari suatu investasi\nLiterasi keuangan: pengetahuan dan keterampilan mengelola keuangan",
+  "bab": [
+    {
+      "judul": "Pendahuluan",
+      "subbab": [
+        {"judul": "latar belakang", "isi": "Paragraf pertama setelah judul subbab ditulis rata kiri tanpa menjorok, sesuai aturan panduan. Kalimat ini hanya contoh isi untuk menguji format paragraf yang panjang agar terlihat bagaimana teks rata kanan-kiri (justify) terbentuk pada halaman.\nParagraf kedua dan seterusnya menjorok 1,25 cm. Istilah asing seperti *financial literacy* otomatis ditulis miring dengan memberi tanda bintang. Data jumlah investor dapat dilihat pada Tabel 1.1.\n[[TABEL: Jumlah Investor Pasar Modal di DIY | KSEI, 2025]]\nTahun | Jumlah Investor | Pertumbuhan (%)\n2022 | 150.000 | 12,5\n2023 | 172.000 | 14,7\n2024 | 198.000 | 15,1\n[[/TABEL]]\nTabel 1.1 menunjukkan bahwa jumlah investor terus meningkat setiap tahun."},
+        {"judul": "rumusan masalah", "isi": "Rumusan masalah dinyatakan dalam kalimat pernyataan, bukan pertanyaan."},
+        {"judul": "pertanyaan penelitian", "isi": "Pertanyaan penelitian ini adalah sebagai berikut.\n1. Apakah literasi keuangan berpengaruh terhadap keputusan investasi mahasiswa?\n2. Seberapa besar pengaruh tersebut?"},
+        {"judul": "tujuan penelitian", "isi": "Tujuan penelitian disusun sesuai dengan pertanyaan penelitian."},
+        {"judul": "manfaat penelitian", "isi": "Manfaat penelitian ini terdiri atas dua jenis.\n1. Manfaat teoretis\na. Menambah kajian literatur tentang keuangan perilaku.\nb. Menjadi rujukan penelitian berikutnya.\n2. Manfaat praktis\na. Menjadi bahan pertimbangan bagi penyelenggara edukasi keuangan."}
+      ]
+    },
+    {
+      "judul": "Tinjauan Pustaka",
+      "subbab": [
+        {"judul": "Kondisi Umum/Deskripsi Topik Penelitian", "isi": "Bagian ini menjelaskan kondisi umum topik penelitian."},
+        {"judul": "Landasan Teori", "isi": "### teori perilaku terencana\nIsi sub-subbab tentang teori yang mendasari penelitian.\n### literasi keuangan\nIsi sub-subbab kedua."},
+        {"judul": "Penelitian Terdahulu", "isi": "Ringkasan penelitian terdahulu yang relevan."},
+        {"judul": "Hipotesis", "isi": "H1: Literasi keuangan berpengaruh positif terhadap keputusan investasi."}
+      ]
+    },
+    {
+      "judul": "Metode Penelitian",
+      "subbab": [
+        {"judul": "Desain Penelitian", "isi": "Penelitian ini menggunakan pendekatan kuantitatif."},
+        {"judul": "Jenis dan Sumber Data", "isi": "Data primer diperoleh melalui kuesioner."},
+        {"judul": "Teknik Pengumpulan Data", "isi": "Sampel diambil menggunakan teknik *purposive sampling*."},
+        {"judul": "Teknik Analisis Data", "isi": "Model regresi yang digunakan adalah sebagai berikut.\n[[RUMUS: Y = a + bX + e]]\nY adalah keputusan investasi, X adalah literasi keuangan, a adalah konstanta, b adalah koefisien regresi, dan e adalah *error term*."}
+      ]
+    },
+    {
+      "judul": "Hasil dan Pembahasan",
+      "subbab": [
+        {"judul": "Deskripsi Data", "isi": "Sebaran responden berdasarkan angkatan dapat dilihat pada Gambar 4.1.\n[[GAMBAR: grafik_contoh.png | Sebaran Responden Berdasarkan Angkatan | Data primer diolah, 2026 | 11]]\nGambar 4.1 memperlihatkan bahwa responden terbanyak berasal dari angkatan 2022."},
+        {"judul": "Hasil Analisis", "isi": "Hasil uji regresi disajikan pada Tabel 4.1.\n[[TABEL: Hasil Uji Regresi Linear Sederhana]]\nVariabel | Koefisien | t-hitung | Sig.\nKonstanta | 1,245 | 3,120 | 0,002\nLiterasi Keuangan | 0,512 | 6,845 | 0,000\n[[/TABEL]]\nVariabel literasi keuangan signifikan pada tingkat 5%."},
+        {"judul": "Interpretasi dan Pembahasan", "isi": "Temuan ini sejalan dengan penelitian terdahulu."}
+      ]
+    },
+    {
+      "judul": "Kesimpulan dan Saran",
+      "subbab": [
+        {"judul": "Kesimpulan", "isi": "Literasi keuangan berpengaruh positif dan signifikan terhadap keputusan investasi mahasiswa."},
+        {"judul": "Saran", "isi": "Penyelenggara edukasi keuangan disarankan memperluas program literasi di kampus."},
+        {"judul": "Keterbatasan Penelitian", "isi": "Penelitian ini terbatas pada mahasiswa di satu kota."}
+      ]
+    }
+  ],
+  "daftar_pustaka": "Brown, T. (2021). *Student motivation and classroom engagement*. Oxford University Press.\nAjzen, I. (1991). The theory of planned behavior. *Organizational Behavior and Human Decision Processes*, 50(2), 179–211.\nLusardi, A., & Mitchell, O. S. (2014). The economic importance of financial literacy. *Journal of Economic Literature*, 52(1), 5–44.",
+  "lampiran": [
+    {"judul": "kuesioner penelitian", "isi": "Berikut kuesioner yang digunakan dalam penelitian ini.", "gambar": ""},
+    {"judul": "data mentah responden", "isi": "Data mentah dapat diakses melalui tautan yang disediakan penulis.", "gambar": ""}
+  ]
+}
