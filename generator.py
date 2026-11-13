@@ -389,7 +389,7 @@ class PembangunTA:
         if self.logo:
             p.add_run().add_picture(io.BytesIO(self.logo), width=Cm(self.f["lebar_logo_cm"]), height=Cm(self.f["tinggi_logo_cm"]))
         else:
-            r = p.add_run("[Lambang UGM 5,5 × 5,71 cm — upload logo di aplikasi]")
+            r = p.add_run("[Lambang UGM 5,5 × 5,71 cm, upload logo di aplikasi]")
             r.italic = True
             r.font.color.rgb = RGBColor(0xC0, 0, 0)
             self.peringatan.append("Logo UGM belum diupload, sampul berisi penanda tempat logo.")

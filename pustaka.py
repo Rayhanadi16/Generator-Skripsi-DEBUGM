@@ -111,6 +111,16 @@ def dari_crossref(pesan):
     return isian
 
 
+def _konteks_ssl():
+    # Python dari python.org di macOS tidak membawa sertifikat akar, jadi semua HTTPS gagal tanpa certifi.
+    import ssl
+    try:
+        import certifi
+        return ssl.create_default_context(cafile=certifi.where())
+    except ImportError:
+        return ssl.create_default_context()
+
+
 def ambil_crossref(doi, batas_detik=12):
     doi = rapikan_doi(doi)
     if not doi:
@@ -118,13 +128,16 @@ def ambil_crossref(doi, batas_detik=12):
     url = "https://api.crossref.org/works/" + urllib.parse.quote(doi, safe="/")
     minta = urllib.request.Request(url, headers={"User-Agent": "GeneratorLaporanTA/1.0 (daftar pustaka)"})
     try:
-        with urllib.request.urlopen(minta, timeout=batas_detik) as jawab:
+        with urllib.request.urlopen(minta, timeout=batas_detik, context=_konteks_ssl()) as jawab:
             data = json.loads(jawab.read().decode("utf-8"))
     except urllib.error.HTTPError as e:
         if e.code == 404:
             raise GagalAmbil(f"DOI {doi} tidak terdaftar di Crossref. Isi rinciannya sendiri di bawah.") from e
         raise GagalAmbil(f"Crossref menolak permintaan (kode {e.code}). Coba lagi sebentar lagi.") from e
     except Exception as e:
+        if "CERTIFICATE_VERIFY_FAILED" in str(e):
+            raise GagalAmbil("Sambungan aman ke Crossref ditolak karena sertifikat SSL tidak ditemukan. "
+                             "Jalankan: pip install certifi, lalu mulai ulang aplikasi.") from e
         raise GagalAmbil("Tidak bisa menghubungi Crossref. Periksa koneksi internet, atau isi rinciannya sendiri.") from e
     isian = dari_crossref(data.get("message") or {})
     if not isian["tautan"]:

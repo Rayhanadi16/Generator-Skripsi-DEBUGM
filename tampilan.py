@@ -11,12 +11,12 @@ WARNA = {
     "kertas": "#FFFFFF",
     "meja": "#ECEEF3",
     "tinta": "#1B1F2E",
-    "redup": "#6A7083",
+    "redup": "#5E6477",
     "stempel": "#4A3AA7",
     "stempel_muda": "#ECEAF8",
     "garis": "#D5D8E0",
     "merah": "#B3261E",
-    "kuning": "#A96800",
+    "kuning": "#8F5800",
     "hijau": "#2E7D4F",
 }
 
@@ -25,9 +25,13 @@ PEMBUAT = "@rayhanadi16_"
 CSS = """
 <style>
 :root {
-  --kertas:#FFFFFF; --meja:#ECEEF3; --tinta:#1B1F2E; --redup:#6A7083;
+  /* --redup dan --kuning dipilih agar tetap 4,5:1 di atas --meja dan --stempel-muda, bukan hanya di atas putih */
+  --kertas:#FFFFFF; --meja:#ECEEF3; --tinta:#1B1F2E; --redup:#5E6477;
   --stempel:#4A3AA7; --stempel-tua:#392C86; --stempel-muda:#ECEAF8; --garis:#D5D8E0;
-  --merah:#B3261E; --kuning:#A96800; --hijau:#2E7D4F;
+  --tepi:#8A90A0;   /* tepi kotak isian dan tombol: 3:1 terhadap kertas */
+  --merah:#B3261E; --kuning:#8F5800; --hijau:#2E7D4F;
+  --lapis:#F7F8FA; --lapis2:#F1F2F6; --kertas-ungu:#F7F6FD; --samar:#6A7083;
+  --di-stempel:#FFFFFF;   /* teks di atas warna stempel */
   --ui:"Avenir Next","Segoe UI",system-ui,-apple-system,sans-serif;
   --judul:"Charter","Iowan Old Style","Cambria",Georgia,serif;
 }
@@ -36,7 +40,9 @@ CSS = """
 .stApp { background:var(--meja); color:var(--tinta); }
 .stApp, .stApp p, .stApp li, .stApp label, .stApp input, .stApp textarea, .stApp button,
 .stApp [data-baseweb="tab"], .stApp [data-baseweb="select"] div, .stApp summary,
-.stApp [data-testid="stCaptionContainer"] { font-family:var(--ui); }
+.stApp [data-testid="stCaptionContainer"],
+.kop, .catatan-sisi, .pratinjau-ref, .rekap, .jejak, .kerangka, .dm, .dm-ket, .beda-panduan, .sesuai-panduan {
+  font-family:var(--ui); }
 .stApp h1, .stApp h2, .stApp h3 { font-family:var(--judul); color:var(--tinta); letter-spacing:-0.01em; }
 .stApp h2 { font-size:1.5rem; font-weight:700; padding:0.2rem 0 0.1rem; }
 .stApp h3 { font-size:1.2rem; font-weight:700; padding:1.1rem 0 0.2rem; }
@@ -50,8 +56,17 @@ header[data-testid="stHeader"] { background:transparent; }
   border-radius:4px; box-shadow:0 2px 0 var(--garis);
   padding:2.25rem 2.75rem 3rem; margin:2.5rem auto 3rem; }
 @media (max-width:820px) {
-  [data-testid="stMainBlockContainer"] { padding:1.25rem 1rem 2rem; margin:0.5rem auto 1.5rem; border-radius:0; }
+  /* jarak atas memberi tempat untuk tombol pembuka sisi kiri, supaya tidak menimpa judul */
+  [data-testid="stMainBlockContainer"] { padding:3.5rem 1rem 2rem; margin:0.5rem auto 1.5rem; border-radius:0; }
 }
+
+/* tombol tema: ikon saja di pojok kanan atas lembar; labelnya tetap ada untuk pembaca layar */
+[data-testid="stMainBlockContainer"] { position:relative; }
+.st-key-tombol_tema { position:absolute; top:0.8rem; right:1rem; width:auto; z-index:5; }
+.stApp .st-key-tombol_tema button { width:44px; height:44px; min-height:44px; padding:0; }
+.st-key-tombol_tema button [data-testid="stIconMaterial"] { font-size:1.4rem; margin:0; }
+.st-key-tombol_tema button [data-testid="stMarkdownContainer"] {
+  position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%); white-space:nowrap; }
 
 /* ---------- kop ---------- */
 .kop { display:flex; align-items:flex-end; justify-content:space-between; gap:2rem; flex-wrap:wrap;
@@ -64,9 +79,11 @@ header[data-testid="stHeader"] { background:transparent; }
 @media (max-width:820px) { .kop { gap:0.9rem; } .kop h1 { font-size:1.7rem; } .kop-format { text-align:left; } }
 
 /* ---------- tab (role=... untuk Streamlit baru, data-baseweb untuk versi lama) ---------- */
-.stTabs [role="tablist"] { gap:0; border-bottom:1px solid var(--garis); }
-.stTabs [role="tab"] { padding:0.85rem 0.95rem 0.8rem; height:auto; color:var(--redup); background:transparent; }
-.stTabs [role="tab"]:first-child { padding-left:0; }
+/* sembilan tab harus terlihat semua: di layar sempit turun ke baris kedua, bukan digulir ke samping */
+.stTabs [role="tablist"] { gap:0 1rem; flex-wrap:wrap; overflow:visible; border-bottom:1px solid var(--garis); }
+.stTabs [role="tab"] { padding:0.85rem 0 0.8rem; height:auto; min-height:44px; min-width:44px; justify-content:center; color:var(--redup);
+  background:transparent; cursor:pointer; }
+.stTabs button[aria-label^="Scroll tabs"] { display:none; }
 .stTabs [role="tab"] p { font-size:0.95rem; font-weight:500; font-family:var(--ui); color:inherit; }
 .stTabs [role="tab"]:hover { color:var(--tinta); }
 .stTabs [role="tab"][aria-selected="true"] { color:var(--stempel); }
@@ -81,7 +98,7 @@ header[data-testid="stHeader"] { background:transparent; }
 .stApp [data-baseweb="input"], .stApp [data-baseweb="textarea"], .stApp [data-baseweb="select"] > div,
 .stApp [data-testid="stNumberInputContainer"], .stApp [data-testid="stTextInputRootElement"],
 .stApp [data-testid="stTextAreaRootElement"] {
-  background:var(--kertas); border:1px solid #B9BECB; border-radius:3px; }
+  background:var(--kertas); border:1px solid var(--tepi); border-radius:3px; }
 .stApp [data-baseweb="base-input"], .stApp input, .stApp textarea,
 .stApp [data-testid="stTextInputRootElement"] > div, .stApp [data-testid="stTextAreaRootElement"] > div {
   background:var(--kertas); color:var(--tinta); }
@@ -89,42 +106,50 @@ header[data-testid="stHeader"] { background:transparent; }
 .stApp [data-baseweb="input"]:focus-within, .stApp [data-baseweb="textarea"]:focus-within,
 .stApp [data-testid="stNumberInputContainer"]:focus-within, .stApp [data-testid="stTextInputRootElement"]:focus-within,
 .stApp [data-testid="stTextAreaRootElement"]:focus-within {
-  border-color:var(--stempel); box-shadow:0 0 0 2px var(--stempel-muda); }
+  border-color:var(--stempel); box-shadow:0 0 0 1px var(--stempel), 0 0 0 4px var(--stempel-muda); }
 .stApp textarea { line-height:1.6; }
-.stApp input::placeholder, .stApp textarea::placeholder { color:#9BA1B0; }
+.stApp input::placeholder, .stApp textarea::placeholder { color:var(--samar); opacity:1; }
 
 /* ---------- tombol ---------- */
 .stApp :is([data-testid="stBaseButton-secondary"], [data-testid="stBaseButton-primary"]) {
-  border-radius:3px; border:1px solid #B9BECB; background:var(--kertas); color:var(--tinta);
+  border-radius:3px; border:1px solid var(--tepi); background:var(--kertas); color:var(--tinta);
   padding:0.45rem 0.95rem; box-shadow:none; }
+.stApp :is([data-testid="stBaseButton-secondary"], [data-testid="stBaseButton-primary"]):active { transform:translateY(1px); }
+.stApp :is([data-testid="stBaseButton-secondary"], [data-testid="stBaseButton-primary"]):disabled {
+  cursor:not-allowed; background:var(--lapis2); border-color:var(--garis); color:var(--redup); }
+.stApp input:disabled { cursor:not-allowed; }
+@media (max-width:820px) {
+  .stApp button, .stApp [data-testid="stBaseButton-secondary"], .stApp [data-testid="stBaseButton-primary"] {
+    min-height:44px; min-width:44px; }
+}
 .stApp :is([data-testid="stBaseButton-secondary"], [data-testid="stBaseButton-primary"]) p { font-size:0.9rem; font-weight:600; }
 .stApp [data-testid="stBaseButton-secondary"]:hover { border-color:var(--stempel); color:var(--stempel); background:var(--kertas); }
 .stApp :is([data-testid="stBaseButton-secondary"], [data-testid="stBaseButton-primary"]):focus-visible {
   outline:2px solid var(--stempel); outline-offset:2px; }
-.stApp [data-testid="stBaseButton-primary"] { background:var(--stempel); border-color:var(--stempel); color:#fff; }
-.stApp [data-testid="stBaseButton-primary"]:hover { background:var(--stempel-tua); border-color:var(--stempel-tua); color:#fff; }
-.stApp [data-testid="stBaseButton-primary"] p { color:#fff; }
+.stApp [data-testid="stBaseButton-primary"] { background:var(--stempel); border-color:var(--stempel); color:var(--di-stempel); }
+.stApp [data-testid="stBaseButton-primary"]:hover { background:var(--stempel-tua); border-color:var(--stempel-tua); color:var(--di-stempel); }
+.stApp [data-testid="stBaseButton-primary"] p { color:var(--di-stempel); }
 
 /* ---------- panel lipat & kotak ---------- */
 .stApp [data-testid="stExpander"] details { border:1px solid var(--garis); border-radius:3px; background:var(--kertas); }
 .stApp [data-testid="stExpander"] summary { padding:0.8rem 1rem; }
 .stApp [data-testid="stExpander"] summary p { font-weight:600; font-size:0.95rem; }
 .stApp [data-testid="stExpander"] summary:hover { color:var(--stempel); }
-.stApp [data-testid="stFileUploaderDropzone"] { background:#F7F8FA; border:1px dashed #B9BECB; border-radius:3px; }
-.stApp code { background:#F1F2F6; color:var(--tinta); border-radius:2px; font-size:0.85em; }
+.stApp [data-testid="stFileUploaderDropzone"] { background:var(--lapis); border:1px dashed var(--tepi); border-radius:3px; }
+.stApp code { background:var(--lapis2); color:var(--tinta); border-radius:2px; font-size:0.85em; }
 .stApp [data-testid="stAlertContainer"] { border-radius:3px; }
 .stApp hr { border-color:var(--garis); margin:1.2rem 0; }
 
 /* ---------- sisi kiri ---------- */
-[data-testid="stSidebar"] { background:#F7F8FA; border-right:1px solid var(--garis); }
+[data-testid="stSidebar"] { background:var(--lapis); border-right:1px solid var(--garis); }
 [data-testid="stSidebar"] h2 { font-size:1.15rem; padding-top:0; }
 [data-testid="stSidebar"] h3 { font-size:1rem; padding-top:0.4rem; }
 .catatan-sisi { font-size:0.875rem; margin-bottom:0.6rem; color:var(--redup); line-height:1.55; }
 .catatan-sisi b { color:var(--tinta); font-weight:600; }
 
 /* ---------- pratinjau referensi ---------- */
-.pratinjau-ref { border-left:3px solid var(--stempel); background:#F7F6FD; padding:0.75rem 1rem; margin:0.3rem 0 0.9rem;
-  border-radius:0 3px 3px 0; }
+.pratinjau-ref { border:1px solid var(--garis); background:var(--kertas-ungu); padding:0.75rem 1rem; margin:0.3rem 0 0.9rem;
+  border-radius:3px; }
 .pratinjau-ref .hasil { font-family:"Times New Roman",Times,serif; font-size:1.02rem; line-height:1.45;
   padding-left:2rem; text-indent:-2rem; overflow-wrap:anywhere; }
 .pratinjau-ref .ket { font-size:0.8rem; color:var(--redup); margin-bottom:0.35rem; }
@@ -134,11 +159,12 @@ header[data-testid="stHeader"] { background:transparent; }
 .cap-pembuat { position:fixed; right:1.1rem; bottom:0.9rem; z-index:999; pointer-events:none; user-select:none;
   font-family:var(--judul); font-weight:700; font-size:1.05rem; color:var(--stempel); opacity:0.42;
   border:2px solid currentColor; border-radius:3px; padding:0.2rem 0.6rem; transform:rotate(-4deg); }
-@media (max-width:820px) { .cap-pembuat { font-size:0.85rem; right:0.6rem; bottom:0.6rem; } }
+/* di ponsel cap ini menutupi isian; nama pembuat tetap ada di sisi kiri */
+@media (max-width:820px) { .cap-pembuat { display:none; } }
 .stApp input:disabled { -webkit-text-fill-color:var(--tinta); color:var(--tinta); opacity:1; }
 .stApp [data-testid="stTextInputRootElement"]:has(input:disabled),
 .stApp [data-testid="stTextInputRootElement"]:has(input:disabled) > div,
-.stApp [data-testid="stTextInputRootElement"]:has(input:disabled) input { background:#F1F2F6; }
+.stApp [data-testid="stTextInputRootElement"]:has(input:disabled) input { background:var(--lapis2); }
 
 /* ---------- status pelacakan draft ---------- */
 .titik { display:inline-block; width:9px; height:9px; border-radius:50%; margin-right:7px; vertical-align:baseline; }
@@ -167,21 +193,69 @@ header[data-testid="stHeader"] { background:transparent; }
 .dm .nilai b { display:block; font-size:1.02rem; color:var(--tinta); font-weight:700; }
 .dm .nilai.beda b { color:var(--stempel); }
 .dm-kertas { grid-column:2; grid-row:2; position:relative; width:100%; aspect-ratio:21/29.7;
-      border:1px solid #9BA1B0; box-shadow:3px 3px 0 var(--garis);
-      background:repeating-linear-gradient(135deg, var(--stempel-muda) 0 5px, #F7F6FD 5px 10px); }
-.dm-teks { position:absolute; background-color:#fff; outline:1px dashed var(--stempel);
-      background-image:repeating-linear-gradient(to bottom, transparent 0 7px, #D9DCE4 7px 8px);
+      border:1px solid var(--tepi); box-shadow:3px 3px 0 var(--garis);
+      background:repeating-linear-gradient(135deg, var(--stempel-muda) 0 5px, var(--kertas-ungu) 5px 10px); }
+.dm-teks { position:absolute; background-color:var(--kertas); outline:1px dashed var(--stempel);
+      background-image:repeating-linear-gradient(to bottom, transparent 0 7px, var(--garis) 7px 8px);
       background-origin:content-box; background-clip:content-box; box-sizing:border-box; padding:7px 6px 6px;
       transition:top .18s ease, right .18s ease, bottom .18s ease, left .18s ease; }
 .dm-hal { position:absolute; left:0; right:0; text-align:center; font-size:0.62rem; color:var(--redup); line-height:1; transform:translateY(50%); }
 @media (prefers-reduced-motion:reduce) { .dm-teks { transition:none; } }
 .dm-ket { text-align:center; font-size:0.85rem; color:var(--redup); margin-top:0.9rem; }
 .dm-ket b { color:var(--tinta); font-weight:600; }
-.beda-panduan { border-left:3px solid var(--stempel); background:var(--stempel-muda); padding:0.7rem 0.9rem;
-      font-size:0.9rem; line-height:1.5; margin:0.4rem 0 0.8rem; border-radius:0 3px 3px 0; }
+.beda-panduan { border:1px solid var(--stempel); background:var(--stempel-muda); padding:0.7rem 0.9rem;
+      font-size:0.9rem; line-height:1.5; margin:0.4rem 0 0.8rem; border-radius:3px; }
 .sesuai-panduan { font-size:0.9rem; color:var(--redup); margin:0.4rem 0 0.8rem; }
 </style>
 """
+
+# Mode gelap: meja yang sama di malam hari. Stempel dibuat lebih terang supaya tetap terbaca di atas gelap,
+# dan teks di atasnya berbalik menjadi gelap.
+CSS_GELAP = """
+<style>
+:root {
+  color-scheme:dark;
+  --kertas:#1E212B; --meja:#14161D; --tinta:#E8EAF0; --redup:#A8AEBF;
+  --stempel:#B3A6F5; --stempel-tua:#C9BFFA; --stempel-muda:#2D2950; --garis:#343846;
+  --tepi:#7C8398;
+  --merah:#F4978E; --kuning:#E5B454; --hijau:#7CCB9E;
+  --lapis:#191C24; --lapis2:#2A2E3B; --kertas-ungu:#252238; --samar:#8E94A6;
+  --di-stempel:#14161D;
+}
+.stApp p, .stApp li, .stApp label, .stApp summary, .stApp [data-testid="stWidgetLabel"] { color:var(--tinta); }
+.stTabs [role="tab"] [data-testid="stMarkdownContainer"] { color:inherit; }
+
+/* komponen bawaan Streamlit yang membawa warna terangnya sendiri */
+.stApp [data-testid="stAlertContainer"] { background:var(--lapis2); border:1px solid var(--garis); color:var(--tinta); }
+.stApp [data-testid="stAlertContainer"]:has([data-testid="stAlertContentSuccess"]) { border-color:var(--hijau); }
+.stApp [data-testid="stAlertContainer"]:has([data-testid="stAlertContentWarning"]) { border-color:var(--kuning); }
+.stApp [data-testid="stAlertContainer"]:has([data-testid="stAlertContentError"]) { border-color:var(--merah); }
+.stApp [data-testid="stAlertContainer"]:has([data-testid="stAlertContentInfo"]) { border-color:var(--stempel); }
+.stApp [data-testid="stExpander"] summary, .stApp [data-testid="stExpander"] summary:hover { background:var(--lapis); }
+.stApp [data-testid="stFileUploaderDropzone"] :not(button, button *) { color:var(--redup); }
+.stApp [data-testid="stFileUploaderFile"] * { color:var(--tinta); }
+.stApp [data-testid="stNumberInputContainer"] button { background:transparent; color:var(--tinta); }
+.stApp [data-testid="stNumberInputContainer"] button:hover { background:var(--lapis2); }
+.stApp [data-testid="stVerticalBlockBorderWrapper"] { border-color:var(--garis); }
+.stApp [data-testid="stCode"], .stApp pre { background:var(--lapis2); color:var(--tinta); }
+.stApp [data-testid="stHeader"] button, .stApp [data-testid="stSidebar"] button[kind="headerNoPadding"],
+.stApp [data-testid="stExpandSidebarButton"] { color:var(--tinta); }
+[data-testid="stToast"] { background:var(--lapis2); color:var(--tinta); border:1px solid var(--garis); }
+[data-testid="stToast"] * { color:var(--tinta); }
+[data-baseweb="popover"] [role="listbox"], [data-baseweb="popover"] ul { background:var(--lapis2); }
+[data-baseweb="popover"] [role="option"] { color:var(--tinta); }
+[data-baseweb="popover"] [role="option"]:hover, [data-baseweb="popover"] [role="option"][aria-selected="true"] {
+  background:var(--stempel-muda); }
+[data-baseweb="tooltip"] > div { background:var(--lapis2); color:var(--tinta); }
+.stApp [data-baseweb="select"] svg { fill:var(--tinta); }
+.stApp [data-baseweb="select"] div { color:var(--tinta); background-color:transparent; }
+.stApp [data-baseweb="select"] > div { background-color:var(--kertas); }
+</style>
+"""
+
+
+def css(gelap=False):
+    return CSS + (CSS_GELAP if gelap else "")
 
 
 TENTANG_DATA = """

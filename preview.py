@@ -432,13 +432,15 @@ class PreviewHTML:
 
     def _bungkus(self, isi, zoom):
         f = self.f
+        meja, tinta, redup, merah = (("#14161D", "#E8EAF0", "#A8AEBF", "#F4978E") if getattr(self, "gelap", False)
+                                     else ("#ECEEF3", "#1B1F2E", "#5E6477", "#B3261E"))
         return f"""<!DOCTYPE html><html><head><meta charset="utf-8"><style>
-        body {{ background:#ECEEF3; margin:0; padding:4px 0 24px; font-family:"Avenir Next","Segoe UI",system-ui,sans-serif; }}
+        body {{ background:{meja}; margin:0; padding:4px 0 24px; font-family:"Avenir Next","Segoe UI",system-ui,sans-serif; }}
         .wrap {{ zoom:{zoom}; display:flex; flex-direction:column; align-items:center; }}
-        .label {{ font: 600 17px "Avenir Next","Segoe UI",system-ui,sans-serif; color:#1B1F2E; margin:26px 0 8px; width:{f['kertas_lebar_cm']}cm; }}
-        .label .ket {{ font-weight:400; color:#6A7083; margin-left:8px; }}
+        .label {{ font: 600 17px "Avenir Next","Segoe UI",system-ui,sans-serif; color:{tinta}; margin:26px 0 8px; width:{f['kertas_lebar_cm']}cm; }}
+        .label .ket {{ font-weight:400; color:{redup}; margin-left:8px; }}
         .label .bad, .label .ok {{ font-weight:500; margin-left:8px; font-variant-numeric:tabular-nums; }}
-        .label .bad {{ color:#B3261E; }} .label .ok {{ color:#6A7083; }}
+        .label .bad {{ color:{merah}; }} .label .ok {{ color:{redup}; }}
         .page {{ box-sizing:border-box; background:#fff; width:{f['kertas_lebar_cm']}cm; min-height:{f['kertas_tinggi_cm']}cm;
                  padding:{f['margin_atas_cm']}cm {f['margin_kanan_cm']}cm {f['margin_bawah_cm']}cm {f['margin_kiri_cm']}cm;
                  border:1px solid #D5D8E0; box-shadow:0 2px 0 #D5D8E0; position:relative;
@@ -478,5 +480,8 @@ class PreviewHTML:
         </style></head><body><div class="wrap">{isi}</div></body></html>"""
 
 
-def halaman_html(data, gambar=None, logo=None, zoom=0.75, fmt=None):
-    return PreviewHTML(data, gambar, logo, fmt or format_dari(data)).bangun(zoom)
+def halaman_html(data, gambar=None, logo=None, zoom=0.75, fmt=None, gelap=False):
+    """gelap hanya menggelapkan meja di sekeliling lembar; lembarnya tetap putih seperti kertas hasil cetak."""
+    pratinjau = PreviewHTML(data, gambar, logo, fmt or format_dari(data))
+    pratinjau.gelap = gelap
+    return pratinjau.bangun(zoom)

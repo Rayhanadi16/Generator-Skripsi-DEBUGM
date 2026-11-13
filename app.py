@@ -30,9 +30,8 @@ if MODE_WEB:
     asv = _TanpaAutosave()
 
 st.set_page_config(page_title="Generator Laporan TA", layout="wide")
-st.markdown(tp.CSS, unsafe_allow_html=True)
-
 ss = st.session_state
+st.markdown(tp.css(ss.get("mode_gelap", False)), unsafe_allow_html=True)
 
 FIELD_IDENTITAS = ["judul_id", "judul_en", "nama", "nim", "prodi", "tahun", "pembimbing",
                    "tahun_terdaftar", "fakultas", "tempat_ttd", "tanggal_ttd"]
@@ -78,6 +77,10 @@ def atur_margin(nilai):
 def margin_sekarang():
     bawaan = margin_bawaan()
     return {s: float(ss.get(f"mg_{s}", bawaan[s])) for s in SISI_MARGIN}
+
+
+def cb_ganti_tema():
+    ss["mode_gelap"] = not ss.get("mode_gelap", False)
 
 
 def cb_margin_panduan():
@@ -409,6 +412,11 @@ with st.sidebar:
             st.markdown(tp.TENTANG_DATA)
     st.divider()
     st.markdown(f'<div class="catatan-sisi">Dibuat oleh <b>{tp.PEMBUAT}</b></div>', unsafe_allow_html=True)
+
+with st.container(key="tombol_tema"):   # ditaruh di pojok kanan atas lembar lewat CSS (.st-key-tombol_tema)
+    gelap = ss.get("mode_gelap", False)
+    st.button("Ganti ke mode terang" if gelap else "Ganti ke mode gelap", key="ganti_tema",
+              icon=":material/dark_mode:" if gelap else ":material/light_mode:", on_click=cb_ganti_tema)
 
 st.markdown(tp.kop(margin, MARGIN_PANDUAN, FORMAT_DEB_SV_UGM["nama"]) + tp.watermark(), unsafe_allow_html=True)
 
@@ -746,7 +754,7 @@ with tab_prev:
     gambar_prev = kumpulkan_gambar()
     struktur, cek = kerangka(data_prev, gambar_prev)
     if cek:
-        with st.expander(f"{len(cek)} hal perlu diperhatikan", expanded=True):
+        with st.expander(f"{len(cek)} hal perlu diperhatikan", expanded=False):
             st.markdown("\n".join(f"- {c}" for c in cek))
     else:
         st.success("Tidak ada masalah yang terdeteksi.")
@@ -761,7 +769,8 @@ with tab_prev:
                    "yang sama dengan file Word. Garis putus-putus adalah batas margin, tulisan merah berarti belum "
                    "diisi. Pemotongan halaman dan nomor halaman yang pasti baru dihitung oleh Word.")
         logo_prev = ambil_logo()
-        html_prev = halaman_html(data_prev, gambar_prev, logo_prev, zoom=zoom / 100)
+        html_prev = halaman_html(data_prev, gambar_prev, logo_prev, zoom=zoom / 100,
+                                 gelap=ss.get("mode_gelap", False))
         if hasattr(st, "iframe"):
             st.iframe(html_prev, height=1100)
         else:  # Streamlit versi lama
