@@ -266,6 +266,16 @@ TENTANG_DATA = """
 """
 
 
+TENTANG_DATA_SIMPAN = """
+- Isian, draft, gambar, dan logo yang kamu unggah hanya dipakai untuk menyusun laporanmu.
+- Tidak ada yang disimpan ke penyimpanan server dan tidak ada akun.
+- Simpan otomatis menaruh salinannya di browser ini (IndexedDB), di perangkatmu sendiri. Siapa pun yang memakai browser yang sama bisa membukanya, jadi di komputer bersama klik Hapus simpanan di perangkat ini sebelum pergi.
+- Simpanan itu hilang kalau data browser dihapus atau kamu memakai mode penyamaran, dan tidak ikut ke perangkat lain.
+- File progres (.json) berisi seluruh isianmu. Simpan di tempat yang aman dan jangan dibagikan sembarangan.
+- Hasilnya mengikuti Panduan TA DEB SV UGM 2025. Tetap cek file Word-nya terhadap panduan dan arahan pembimbing sebelum dikumpulkan.
+"""
+
+
 def pasang_peringatan_tutup(st):
     """Versi web: browser bertanya dulu sebelum tab ditutup atau dimuat ulang, supaya isian tidak hilang tak sengaja."""
     import streamlit.components.v1 as components

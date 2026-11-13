@@ -5,8 +5,9 @@ Aplikasi untuk menyusun laporan TA dalam format Word (.docx) sesuai
 Kamu cukup mengisi identitas, isi bab, pustaka, dan gambar. Format diatur otomatis.
 
 > **Ini versi web**, disiapkan untuk dipakai banyak orang lewat internet. Bedanya dengan versi komputer sendiri:
-> isian pengunjung **tidak disimpan di server** (tidak ada autosave dan riwayat versi), jadi setiap pengunjung
-> membawa pulang pekerjaannya lewat tombol **Simpan progres (.json)**. Cara meng-online-kan ada di
+> isian pengunjung **tidak disimpan di server**. Simpan otomatisnya menaruh isian, gambar, dan logo di browser
+> pengunjung sendiri (IndexedDB), jadi hanya terbaca di browser dan perangkat yang sama, tanpa riwayat versi.
+> Untuk pindah perangkat tetap pakai tombol **Simpan progres (.json)**. Cara meng-online-kan ada di
 > `PANDUAN_DEPLOY.md`. Untuk menjalankan folder ini di komputer sendiri dengan autosave:
 > `GENERATOR_MODE=lokal streamlit run app.py --server.address localhost`. Bagian tentang autosave di bawah
 > hanya berlaku untuk mode lokal itu.
@@ -22,7 +23,8 @@ Kamu cukup mengisi identitas, isi bab, pustaka, dan gambar. Format diatur otomat
 | `generator.py` | Mesin pembuat .docx + semua aturan format |
 | `importer.py` | Pembaca & pelacak draft mentah (.docx) |
 | `preview.py` | Preview kerangka & tampilan halaman sebelum generate |
-| `autosave.py` | Simpan otomatis + riwayat versi |
+| `autosave.py` | Simpan otomatis + riwayat versi (mode lokal) |
+| `simpan_browser.py` | Simpan otomatis mode web: jembatan ke IndexedDB di browser pengunjung |
 | `draft_uji/` | Dua draft contoh berantakan untuk mencoba fitur upload draft |
 | `contoh_data.json` | Data contoh untuk mencoba |
 | `grafik_contoh.png` | Gambar contoh untuk data contoh |

@@ -14,7 +14,9 @@ from generator import (FORMAT_DEB_SV_UGM, MARGIN_MAX_CM, MARGIN_MIN_CM, SISI_MAR
 from importer import daftar_tujuan, lacak_draft, susun_data, warna
 from preview import halaman_html, kerangka
 import autosave as asv
+from autosave import _kosong as isian_kosong, sidik as sidik_isi
 import pustaka as pst
+import simpan_browser as sb
 import tampilan as tp
 from pengaturan import MODE_WEB
 
@@ -308,6 +310,10 @@ def cb_terapkan_draft():
 
 
 def cb_lanjutkan_autosave():
+    if MODE_WEB:   # isinya ada di browser; diminta di akhir putaran ini dan diterapkan di putaran berikutnya
+        ss["_sb_minta"] = ss.get("_sb_minta", 0) + 1
+        ss["_autosave_status"] = "memuat"
+        return
     try:
         data, gambar, logo = asv.muat()
         muat_data(data)
@@ -320,9 +326,30 @@ def cb_lanjutkan_autosave():
 
 
 def cb_mulai_baru():
-    asv.cadangkan_sekarang()   # pekerjaan lama tetap aman di Riwayat versi
     ss["_autosave_status"] = "aktif"
+    if MODE_WEB:
+        ss["_pesan"] = ("success", "Mulai dari awal. Simpanan lama di perangkat ini diganti begitu kamu mulai mengisi.")
+        return
+    asv.cadangkan_sekarang()   # pekerjaan lama tetap aman di Riwayat versi
     ss["_pesan"] = ("success", "Mulai dari awal. Pekerjaan sebelumnya tetap tersimpan di Riwayat versi.")
+
+
+def cb_hapus_simpanan():
+    ss["_sb_hapus"] = ss.get("_sb_hapus", 0) + 1
+    ss["autosave_on"] = False
+    ss["_autosave_sidik"] = None
+    ss["_pesan"] = ("success", "Simpanan di perangkat ini dihapus dan simpan otomatis dimatikan.")
+
+
+def terapkan_simpanan(muatan):
+    """Isi form dari simpanan browser. Dipanggil sebelum widget dibuat, karena kunci widget tidak boleh diubah sesudahnya."""
+    if muatan.get("galat") or not muatan.get("isian"):
+        ss["_pesan"] = ("error", "Simpanan di perangkat ini tidak bisa dibaca.")
+        return
+    muat_data(muatan["isian"])
+    ss["_gambar_simpan"] = {nama: sb.dari_b64(isi) for nama, isi in (muatan.get("gambar") or {}).items()}
+    ss["_logo_simpan"] = sb.dari_b64(muatan.get("logo"))
+    ss["_pesan"] = ("success", "Pekerjaan terakhir berhasil dipulihkan.")
 
 
 def cb_pulihkan_riwayat():
@@ -354,10 +381,20 @@ def ambil_logo():
 
 isi_default()
 
+SIMPAN_BROWSER = MODE_WEB and sb.TERSEDIA
+
+if ss.get("_sb_terima"):
+    terapkan_simpanan(ss.pop("_sb_terima"))
+    ss["_autosave_status"] = "aktif"
+
 if "_autosave_status" not in ss:
-    info_as = asv.info()
-    ss["_autosave_status"] = "tanya" if (info_as and not info_as["kosong"]) else "aktif"
-    ss["_autosave_info"] = info_as
+    if SIMPAN_BROWSER:   # "cek": menunggu browser melapor ada simpanan atau tidak; selama itu jangan menyimpan
+        ss["_autosave_status"] = "cek"
+        ss["_autosave_info"] = None
+    else:
+        info_as = asv.info()
+        ss["_autosave_status"] = "tanya" if (info_as and not info_as["kosong"]) else "aktif"
+        ss["_autosave_info"] = info_as
 
 MARGIN_PANDUAN = margin_bawaan()
 margin = margin_sekarang()
@@ -376,11 +413,22 @@ with st.sidebar:
     st.button("Muat file progres", on_click=cb_muat_progres, use_container_width=True)
     if MODE_WEB:
         st.divider()
-        st.subheader("Isianmu tidak disimpan di server")
-        st.markdown('<div class="catatan-sisi">Semua isian hanya ada di tab browser ini dan hilang kalau tab ditutup '
-                    'atau lama tidak dipakai. <b>Klik Simpan progres (.json) secara berkala</b>, lalu muat lagi '
-                    'file itu saat mau melanjutkan.</div>', unsafe_allow_html=True)
-        st.caption("Teks di kotak isian baru tercatat setelah kamu klik di luar kotak atau menekan Ctrl/Cmd + Enter.")
+        if SIMPAN_BROWSER:
+            st.subheader("Simpan otomatis")
+            st.toggle("Simpan di perangkat ini", value=True, key="autosave_on")
+            slot_status_simpan = st.container()
+            st.markdown('<div class="catatan-sisi">Isian, gambar, dan logo disimpan di browser ini, <b>bukan di '
+                        'server</b>, dan hanya terbaca di browser dan perangkat yang sama. Untuk pindah perangkat '
+                        'atau berjaga-jaga, tetap pakai <b>Simpan progres (.json)</b>.</div>', unsafe_allow_html=True)
+            st.button("Hapus simpanan di perangkat ini", on_click=cb_hapus_simpanan, use_container_width=True)
+            st.caption("Hapus bila kamu memakai komputer bersama. Teks di kotak isian baru tercatat setelah kamu "
+                       "klik di luar kotak atau menekan Ctrl/Cmd + Enter.")
+        else:
+            st.subheader("Isianmu tidak disimpan di server")
+            st.markdown('<div class="catatan-sisi">Semua isian hanya ada di tab browser ini dan hilang kalau tab '
+                        'ditutup atau lama tidak dipakai. <b>Klik Simpan progres (.json) secara berkala</b>, lalu '
+                        'muat lagi file itu saat mau melanjutkan.</div>', unsafe_allow_html=True)
+            st.caption("Teks di kotak isian baru tercatat setelah kamu klik di luar kotak atau menekan Ctrl/Cmd + Enter.")
     else:
         st.divider()
         st.subheader("Simpan otomatis")
@@ -409,7 +457,7 @@ with st.sidebar:
                   if MODE_WEB else "Isianmu sekarang dicadangkan dulu ke riwayat."))
     if MODE_WEB:
         with st.expander("Tentang data kamu"):
-            st.markdown(tp.TENTANG_DATA)
+            st.markdown(tp.TENTANG_DATA_SIMPAN if SIMPAN_BROWSER else tp.TENTANG_DATA)
     st.divider()
     st.markdown(f'<div class="catatan-sisi">Dibuat oleh <b>{tp.PEMBUAT}</b></div>', unsafe_allow_html=True)
 
@@ -428,7 +476,8 @@ if ss.get("_pesan"):   # pakai toast agar tata letak (dan tab yang sedang dibuka
 if ss["_autosave_status"] == "tanya":
     inf = ss.get("_autosave_info") or {}
     with st.container(border=True):
-        st.markdown(f"**Ada pekerjaan yang tersimpan otomatis** pada {inf.get('waktu'):%d %b %Y, %H:%M}"
+        kapan = inf.get("waktu_teks") or f"{inf.get('waktu'):%d %b %Y, %H:%M}"
+        st.markdown(f"**Ada pekerjaan yang tersimpan otomatis** pada {kapan}"
                     + (f", berjudul “{inf['judul']}”" if inf.get("judul") else "")
                     + f", dengan {inf.get('kata_bab', 0)} kata di bab. Mau dilanjutkan?")
         k1, k2, _ = st.columns([1, 1, 3])
@@ -826,5 +875,40 @@ if not MODE_WEB and ss["_autosave_status"] == "aktif" and ss.get("autosave_on", 
                 st.toast(f"Simpan otomatis gagal: {e}. Gunakan Simpan progres manual.", icon=":material/error:")
             ss["_autosave_gagal"] = True
 
-if MODE_WEB:   # browser bertanya dulu sebelum tab ditutup, supaya isian tidak hilang tak sengaja
+if SIMPAN_BROWSER:
+    status_as = ss["_autosave_status"]
+    perintah = {"minta": ss.get("_sb_minta", 0), "hapus": ss.get("_sb_hapus", 0)}
+    if not ss.get("autosave_on", True):
+        perintah["mati"] = True
+    elif status_as == "aktif":
+        data_as = kumpulkan_data()
+        gambar_as = kumpulkan_gambar()
+        logo_as = ambil_logo()
+        sidik_gambar = sidik_isi({"g": sorted((k, len(v)) for k, v in gambar_as.items()), "l": len(logo_as or b"")})
+        jejak = sidik_isi({"d": data_as, "g": sidik_gambar})
+        if jejak != ss.get("_autosave_sidik") and not (isian_kosong(data_as) and not gambar_as and not logo_as):
+            n_kata = sum(hitung_kata(s["isi"]) for b in data_as["bab"] for s in b["subbab"])
+            perintah.update(simpan=True, sidik=jejak, isian=data_as,
+                            info={"judul": data_as["identitas"].get("judul_id", ""), "kata_bab": n_kata})
+            if sidik_gambar != ss.get("_autosave_sidik_gambar"):   # gambar hanya dikirim bila berubah
+                perintah["gambar"] = {nama: sb.ke_b64(isi) for nama, isi in gambar_as.items()}
+                perintah["logo"] = sb.ke_b64(logo_as)
+                ss["_autosave_sidik_gambar"] = sidik_gambar
+            ss["_autosave_sidik"] = jejak
+        else:
+            perintah.update(simpan=True, sidik=ss.get("_autosave_sidik"))
+    with slot_status_simpan:
+        info_sb, muatan_sb = sb.pasang(perintah)
+    if status_as == "cek" and info_sb is not None:
+        ada = bool(info_sb.get("ada"))
+        ss["_autosave_info"] = info_sb if ada else None
+        ss["_autosave_status"] = "tanya" if ada else "aktif"
+        st.rerun()
+    if status_as == "memuat" and muatan_sb and muatan_sb.get("nonce") == ss.get("_sb_minta"):
+        ss["_sb_terima"] = muatan_sb
+        st.rerun()
+
+if SIMPAN_BROWSER:   # browser bertanya dulu sebelum tab ditutup, supaya isian tidak hilang tak sengaja
+    sb.jaga_tutup()
+elif MODE_WEB:
     tp.pasang_peringatan_tutup(st)
