@@ -1,16 +1,19 @@
-   # Pengaturan untuk versi web (dipakai banyak orang)
-   [server]
-   maxUploadSize = 20
+# Pengaturan untuk versi web (dipakai banyak orang)
+[server]
+maxUploadSize = 20          # MB per file; draft dan gambar skripsi jarang lebih besar dari ini
 
-   [browser]
-   gatherUsageStats = false
+# Matikan pengiriman statistik pemakaian anonim milik Streamlit
+[browser]
+gatherUsageStats = false
 
-   [client]
-   toolbarMode = "minimal"
+# Sembunyikan menu pengembang
+[client]
+toolbarMode = "minimal"
 
-   [theme]
-   base = "light"
-   primaryColor = "#4A3AA7"
-   backgroundColor = "#FFFFFF"
-   secondaryBackgroundColor = "#F1F2F6"
-   textColor = "#1B1F2E"
+# Warna dasar; rincian tampilan ada di tampilan.py
+[theme]
+base = "light"
+primaryColor = "#4A3AA7"
+backgroundColor = "#FFFFFF"
+secondaryBackgroundColor = "#F1F2F6"
+textColor = "#1B1F2E"
