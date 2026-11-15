@@ -30,6 +30,8 @@ from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
 from docx.shared import Cm, Pt, RGBColor
 
+import rujukan
+
 # ---------------------------------------------------------------------------
 # ATURAN FORMAT (Bab III Panduan, subbab 3.1)
 # Kalau nanti mau mendukung kampus lain, cukup buat dict baru seperti ini.
@@ -186,12 +188,16 @@ def _jaga_baris_tidak_terpotong(baris):
 
 
 def _tulis_inline(paragraf, teks, bold=False, italic=False):
-    """Tulis teks dengan dukungan **tebal** dan *miring*."""
-    pola = re.compile(r"(\*\*.+?\*\*|\*.+?\*)")
+    """Tulis teks dengan dukungan **tebal** dan *miring*. Rujukan yang tidak ditemukan ditulis merah miring."""
+    pola = re.compile(rf"(\*\*.+?\*\*|\*.+?\*|{rujukan.BUKA}.+?{rujukan.TUTUP})")
     for potongan in pola.split(teks):
         if not potongan:
             continue
-        if potongan.startswith("**") and potongan.endswith("**") and len(potongan) > 4:
+        if potongan.startswith(rujukan.BUKA):
+            r = paragraf.add_run(potongan[1:-1])
+            r.italic = True
+            r.font.color.rgb = RGBColor(0xC0, 0, 0)
+        elif potongan.startswith("**") and potongan.endswith("**") and len(potongan) > 4:
             r = paragraf.add_run(potongan[2:-2])
             r.bold = True
             r.italic = italic or None
@@ -220,6 +226,8 @@ class PembangunTA:
         self.doc = Document()
         self.lebar_teks_cm = fmt["kertas_lebar_cm"] - fmt["margin_kiri_cm"] - fmt["margin_kanan_cm"]
         self.no_rumus = 0
+        self.peta_label, label_ganda = rujukan.peta_label(data)
+        self.peringatan += [f"Label #{l} dipakai lebih dari sekali. Rujukan memakai yang pertama." for l in label_ganda]
         self._siapkan_gaya()
         self._atur_halaman(self.doc.sections[0])
 
@@ -696,7 +704,9 @@ class PembangunTA:
             if not judul_sub:
                 continue
             self.doc.add_heading(f"{no}.{j} {judul_kapital(judul_sub)}", level=2)
-            isi = sub.get("isi") or ""
+            hilang = []
+            isi = rujukan.siapkan(sub.get("isi") or "", self.peta_label, hilang)
+            self.peringatan += [f"Rujukan #{l} di subbab {no}.{j} tidak ditemukan. Periksa labelnya." for l in hilang]
             if isi.strip():
                 self._isi_subbab(isi, no, j, penghitung)
             else:

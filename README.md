@@ -25,7 +25,13 @@ Kamu cukup mengisi identitas, isi bab, pustaka, dan gambar. Format diatur otomat
 | `preview.py` | Preview kerangka & tampilan halaman sebelum generate |
 | `autosave.py` | Simpan otomatis + riwayat versi (mode lokal) |
 | `simpan_browser.py` | Simpan otomatis mode web: jembatan ke IndexedDB di browser pengunjung |
-| `draft_uji/` | Dua draft contoh berantakan untuk mencoba fitur upload draft |
+| `pembaruan.py` | Riwayat versi untuk jendela "Yang baru" |
+| `sitasi.py` | Cek sitasi: mencocokkan kutipan di isi bab dengan daftar pustaka |
+| `impor_pustaka.py` | Pembaca file .bib dan .ris dari Zotero atau Mendeley |
+| `tabel_impor.py` | Pembaca tabel dari Excel (.xlsx) atau CSV |
+| `rujukan.py` | Rujukan silang: label pada gambar, tabel, dan rumus, serta penanda `[[REF]]` |
+| `ekspor_pdf.py` | PDF pratinjau lewat LibreOffice |
+| `packages.txt` | Paket sistem untuk Streamlit Community Cloud (LibreOffice dan huruf pengganti) |
 | `contoh_data.json` | Data contoh untuk mencoba |
 | `grafik_contoh.png` | Gambar contoh untuk data contoh |
 | `requirements.txt` | Daftar library yang dibutuhkan |
@@ -117,8 +123,6 @@ Nomor tabel/gambar dari draft diganti dengan penomoran baru per bab.
 
 Isi teks drafmu **tidak diubah sama sekali**. Tools hanya memindahkan ke bagian yang tepat.
 
-Untuk mencoba, upload `draft_uji/draft_semi_berantakan.docx` atau `draft_uji/draft_sangat_berantakan.docx`.
-
 ## Autosave
 
 - Semua isian, gambar, dan logo disimpan otomatis ke folder `autosave/` di dalam folder aplikasi,
@@ -157,6 +161,38 @@ Di bawah kotak Daftar pustaka ada bagian **Tambah referensi**:
 Catatan: pengambilan data butuh internet; judul dari Crossref sering memakai huruf kapital di tiap kata
 (APA meminta hanya kata pertama), jadi periksa dulu. Kodenya ada di `pustaka.py`.
 
+## Impor pustaka dari Zotero atau Mendeley (tab Pustaka & lampiran)
+
+Punya koleksi referensi di Zotero atau Mendeley? Tidak perlu menyalin satu per satu.
+
+1. Ekspor ke file `.bib` (BibTeX) atau `.ris`. Zotero: klik kanan koleksi, **Export Collection**, pilih BibTeX.
+   Mendeley: pilih referensinya, **File**, **Export**, pilih BibTeX atau RIS. Banyak halaman jurnal juga punya tombol
+   Export citation ke RIS.
+2. Upload di bagian **Impor dari Zotero atau Mendeley**, lalu klik **Baca file referensi**.
+3. Setiap referensi tampil dalam gaya APA 7 dengan kotak centang. Yang sudah ada di daftar pustaka ditandai dan tidak
+   bisa ditambahkan lagi; yang rinciannya belum lengkap diberi catatan.
+4. Klik **Tambahkan yang dicentang**.
+
+Entri yang rusak di dalam file dilewati dan disebutkan, tanpa menggagalkan impor. Hasil impor langsung ikut diperiksa
+oleh cek sitasi. Kodenya ada di `impor_pustaka.py`, tanpa library tambahan.
+
+## Cek sitasi
+
+Setiap kutipan di isi bab dicocokkan dengan daftar pustaka, lalu aplikasi melaporkan dua hal:
+
+- kutipan yang tidak punya entri di daftar pustaka, lengkap dengan lokasinya (mis. Bab II, subbab 2.1);
+- entri daftar pustaka yang tidak pernah dikutip.
+
+Bentuk yang dikenali: `(Santoso, 2021)`, `(Santoso & Putri, 2021)`, `Santoso dan Putri (2021)`, `(Santoso et al., 2021)`,
+`Santoso dkk. (2021)`, `(Santoso, 2021, hlm. 5)`, `(Santoso, 2021a)`, `(Santoso, 2021; Putri, 2020)`, penulis lembaga
+seperti `(Bank Indonesia, 2023)` atau `(BPS, 2023)`, dan `(Santoso, t.t.)`. Kolom Sumber pada gambar dan tabel ikut
+diperiksa, kecuali yang berupa data sendiri ("Data primer diolah, 2026").
+
+Hasilnya tampil di daftar hal yang perlu diperhatikan di tab **Preview** dan di bawah kotak Daftar pustaka di tab
+**Pustaka & lampiran**. Aplikasi hanya melapor: isi bab dan daftar pustaka tidak pernah diubah otomatis. Singkatan
+lembaga dicocokkan dengan huruf awal namanya, jadi `(BPS, 2023)` cocok dengan entri "Badan Pusat Statistik. (2023)".
+Kodenya ada di `sitasi.py`.
+
 ## Preview (tab Preview)
 
 Lihat hasilnya sebelum generate:
@@ -180,6 +216,65 @@ setiap bab tampil sebagai satu lembar yang bisa memanjang.
 | `[[GAMBAR: file.png \| Judul \| Sumber \| lebar_cm]]` | gambar + "Gambar 4.1. Judul" di bawahnya |
 | `[[TABEL: Judul \| Sumber]]` … `[[/TABEL]]` | tabel + "Tabel 3.1. Judul" di atasnya; kolom dipisah `\|` |
 | `[[RUMUS: Y = a + bX]]` | persamaan di tengah, nomor (1) di kanan |
+| `[[REF: #label]]` | nomor gambar, tabel, atau rumus berlabel itu, mis. "Tabel 4.2" |
+
+## Rujukan silang
+
+Supaya kalimat seperti "ditunjukkan pada Tabel 4.2" tidak perlu dibetulkan setiap kali urutan tabel berubah, beri label
+lalu rujuk labelnya:
+
+| Penanda | Label | Hasil rujukan |
+|---|---|---|
+| `[[GAMBAR: grafik_penjualan.png \| Judul \| Sumber]]` | otomatis dari nama file: `#grafik_penjualan` | Gambar 4.1 |
+| `[[GAMBAR: peta.png \| Judul \| Sumber \| 10 \| #lokasi]]` | argumen berawalan `#` | Gambar 4.2 |
+| `[[TABEL: Judul \| Sumber \| #statistik]]` | argumen berawalan `#` | Tabel 4.2 |
+| `[[RUMUS: Y = a + bX \| #regresi]]` | argumen berawalan `#` di ujung | Persamaan (3) |
+
+Contoh: `Hasil uji ditunjukkan pada [[REF: #statistik]].` menjadi "Hasil uji ditunjukkan pada Tabel 4.2."
+
+- Rujukan boleh mendahului yang dirujuk dan boleh antarbab.
+- Label tidak ikut tercetak, dan penanda lama tanpa label hasilnya tidak berubah.
+- Label yang tidak dikenal ditulis merah miring `[rujukan #label tidak ditemukan]` di Preview dan di file Word, dan
+  masuk ke daftar hal yang perlu diperhatikan. Label yang dipakai dua kali juga dilaporkan.
+
+Penomoran untuk rujukan dihitung di `rujukan.py`, dan dipakai oleh `generator.py` maupun `preview.py` supaya nomor di
+Preview dan di Word selalu sama.
+
+## Tabel dari Excel atau CSV (tab Bab)
+
+Di tab **Bab**, buka **Sisipkan tabel dari Excel/CSV**:
+
+1. Upload file `.xlsx` atau `.csv`, lalu klik **Baca file tabel**.
+2. Pilih sheet, baris awal (menjadi header) dan baris akhir, isi judul dan sumber, lalu pilih subbab tujuannya.
+3. Periksa pratinjaunya, lalu klik **Sisipkan ke subbab**. Tabel ditulis sebagai penanda `[[TABEL]]` di akhir subbab itu.
+
+Yang perlu diketahui:
+
+- Yang diambil dari Excel adalah nilai hasil rumus, bukan rumusnya. Sel gabungan diisi nilai sel kiri atasnya.
+- Angka ditulis dengan format Indonesia: `1.250.000` dan `3,14`. Dalam satu kolom, jumlah angka di belakang koma
+  dibuat sama. Kolom tahun tidak diberi pemisah ribuan. Hilangkan centang **Pakai koma untuk desimal** untuk format
+  `1,250,000` dan `3.14`.
+- CSV dengan pemisah koma maupun titik koma (bawaan Excel berbahasa Indonesia) dikenali sendiri.
+- Karakter `|` di dalam sel diganti `/`, karena `|` memisahkan kolom di penanda.
+- Tabel lebih dari 8 kolom atau 40 baris diberi peringatan karena kemungkinan tidak muat di A4 tegak.
+
+Karena hasilnya teks biasa di isi subbab, tabel ini ikut tersimpan otomatis dan ikut di file progres. Kodenya ada di
+`tabel_impor.py`, memakai library `openpyxl`.
+
+## PDF pratinjau (tab Buat file Word)
+
+Setelah file Word dibuat, tombol **Buat PDF pratinjau** mengubahnya menjadi PDF lewat LibreOffice, dengan daftar isi,
+daftar tabel, dan daftar gambar yang sudah terisi. Tombol ini hanya muncul bila LibreOffice ada:
+
+- **Di komputer sendiri:** pasang LibreOffice dari https://www.libreoffice.org.
+- **Di Streamlit Community Cloud:** file `packages.txt` memasang `libreoffice-writer-nogui` dan `fonts-liberation`.
+
+Ini PDF pratinjau, bukan pengganti PDF dari Word. Server Linux tidak punya Times New Roman, jadi dipakai Liberation
+Serif yang ukurannya setara, dan pemotongan halamannya bisa sedikit berbeda. Untuk pengumpulan resmi, buka file
+Word-nya lalu simpan sebagai PDF dari Word.
+
+File sementara untuk konversi dibuat di folder sementara dan dihapus begitu konversi selesai atau gagal. Konversi
+dibatasi 90 detik. Kodenya ada di `ekspor_pdf.py`.
 
 ## Aturan panduan yang sudah diterapkan otomatis
 

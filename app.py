@@ -17,6 +17,11 @@ import autosave as asv
 from autosave import _kosong as isian_kosong, sidik as sidik_isi
 import pustaka as pst
 import simpan_browser as sb
+import pembaruan as pb
+import sitasi
+import impor_pustaka as ipt
+import tabel_impor as tbi
+import ekspor_pdf as epdf
 import tampilan as tp
 from pengaturan import MODE_WEB
 
@@ -79,6 +84,34 @@ def atur_margin(nilai):
 def margin_sekarang():
     bawaan = margin_bawaan()
     return {s: float(ss.get(f"mg_{s}", bawaan[s])) for s in SISI_MARGIN}
+
+
+def cb_buka_yang_baru():
+    ss["_yang_baru"] = "buka"
+
+
+def cb_tutup_yang_baru():
+    ss["_yang_baru"] = "tutup"
+
+
+def _isi_yang_baru():
+    terbaru, lama = pb.PEMBARUAN[0], pb.PEMBARUAN[1:3]
+    st.caption(f"{pb.tanggal_teks(terbaru['tanggal'])} · {terbaru['judul']}")
+    st.markdown("\n".join(f"- {p}" for p in terbaru["poin"]))
+    if lama:
+        with st.expander("Pembaruan sebelumnya"):
+            for e in lama:
+                st.markdown(f"**Versi {e['versi']}, {pb.tanggal_teks(e['tanggal'])}: {e['judul']}**\n"
+                            + "\n".join(f"- {p}" for p in e["poin"]))
+    if st.button("Oke, mulai", type="primary", key="tutup_yang_baru"):
+        ss["_yang_baru"] = "tutup"
+        st.rerun()
+
+
+try:   # on_dismiss: menutup lewat X, Esc, atau klik di luar juga dicatat, supaya jendela tidak muncul lagi
+    jendela_yang_baru = st.dialog(f"Yang baru di versi {pb.VERSI}", on_dismiss=cb_tutup_yang_baru)(_isi_yang_baru)
+except TypeError:   # Streamlit lama
+    jendela_yang_baru = st.dialog(f"Yang baru di versi {pb.VERSI}")(_isi_yang_baru)
 
 
 def cb_ganti_tema():
@@ -203,6 +236,46 @@ def cb_tambah_ref():
     ss["_pesan"] = ("success", "Referensi ditambahkan ke daftar pustaka.")
 
 
+def cb_baca_impor_ref():
+    berkas = ss.get("upload_impor_ref")
+    if berkas is None:
+        ss["_pesan"] = ("warning", "Pilih file .bib atau .ris dulu.")
+        return
+    try:
+        daftar, peringatan = ipt.baca_berkas(berkas.name, berkas.getvalue())
+    except ipt.GagalImpor as e:
+        ss["_pesan"] = ("error", str(e))
+        return
+    ss["_impor_ref"], ss["_impor_peringatan"] = daftar, peringatan
+    ss["_impor_nonce"] = ss.get("_impor_nonce", 0) + 1
+    if not daftar:
+        ss["_pesan"] = ("warning", "Tidak ada referensi yang bisa dibaca dari file ini.")
+
+
+def cb_tambah_impor_ref():
+    lama = [b.strip() for b in ss.get("daftar_pustaka", "").splitlines() if b.strip()]
+    tambah, lewat = [], 0
+    for i, isian in enumerate(ss.get("_impor_ref") or []):
+        if not ss.get(f"impor{ss['_impor_nonce']}_{i}"):
+            continue
+        baris = pst.format_apa(isian)
+        if baris in lama or baris in tambah:
+            lewat += 1
+        else:
+            tambah.append(baris)
+    if not tambah:
+        ss["_pesan"] = ("warning", "Tidak ada referensi baru yang dicentang.")
+        return
+    ss["daftar_pustaka"] = "\n".join(lama + tambah)
+    cb_batal_impor_ref()
+    ss["_pesan"] = ("success", f"{len(tambah)} referensi ditambahkan ke daftar pustaka."
+                    + (f" {lewat} dilewati karena sudah ada." if lewat else ""))
+
+
+def cb_batal_impor_ref():
+    ss["_impor_ref"], ss["_impor_peringatan"] = None, []
+
+
 def cb_kosongkan_ref():
     isi_ref(pst.KOSONG)
     ss["rf_doi"] = ""
@@ -231,6 +304,40 @@ def cb_muat_contoh():
     if grafik.exists():   # gambar contoh ikut dimuat supaya tidak perlu diupload sendiri
         ss["_gambar_simpan"] = {**ss.get("_gambar_simpan", {}), grafik.name: grafik.read_bytes()}
     ss["_pesan"] = ("success", "Data contoh dimuat. Lihat hasilnya di tab Preview.")
+
+
+def cb_baca_tabel():
+    berkas = ss.get("upload_tabel")
+    if berkas is None:
+        ss["_pesan"] = ("warning", "Pilih file .xlsx atau .csv dulu.")
+        return
+    try:
+        if berkas.name.lower().endswith(".csv"):
+            lembar = {"CSV": tbi.baca_csv(berkas.getvalue())}
+        else:
+            lembar = tbi.baca_xlsx(berkas.getvalue())
+    except tbi.GagalTabel as e:
+        ss["_pesan"] = ("error", str(e))
+        return
+    ss["_tabel_lembar"] = lembar
+    ss["_tabel_nonce"] = ss.get("_tabel_nonce", 0) + 1
+
+
+def daftar_subbab():
+    return [(i, j) for i in range(ss["jml_bab"]) for j in range(ss[f"bab{i}_n"])]
+
+
+def cb_sisipkan_tabel():
+    penanda, tujuan = ss.get("_tabel_siap"), ss.get("tabel_tujuan")
+    if not penanda or not tujuan:
+        return
+    nomor = tujuan.split(" ", 1)[0]   # "4.1 Deskripsi Data" -> bab 4, subbab 1
+    i, j = (int(x) - 1 for x in nomor.split("."))
+    kunci = f"bab{i}_s{j}_isi"
+    lama = ss.get(kunci, "").rstrip()
+    ss[kunci] = (lama + "\n" if lama else "") + penanda
+    ss["tabel_judul"] = ss["tabel_sumber"] = ""
+    ss["_pesan"] = ("success", f"Tabel disisipkan di akhir subbab {i + 1}.{j + 1}. Nomornya dihitung otomatis.")
 
 
 def cb_tambah_sub(i):
@@ -459,6 +566,7 @@ with st.sidebar:
         with st.expander("Tentang data kamu"):
             st.markdown(tp.TENTANG_DATA_SIMPAN if SIMPAN_BROWSER else tp.TENTANG_DATA)
     st.divider()
+    st.button(f"Yang baru (versi {pb.VERSI})", on_click=cb_buka_yang_baru, use_container_width=True)
     st.markdown(f'<div class="catatan-sisi">Dibuat oleh <b>{tp.PEMBUAT}</b></div>', unsafe_allow_html=True)
 
 with st.container(key="tombol_tema"):   # ditaruh di pojok kanan atas lembar lewat CSS (.st-key-tombol_tema)
@@ -472,6 +580,13 @@ if ss.get("_pesan"):   # pakai toast agar tata letak (dan tab yang sedang dibuka
     jenis, teks = ss.pop("_pesan")
     st.toast(teks, icon={"success": ":material/check_circle:", "warning": ":material/warning:",
                          "error": ":material/error:"}.get(jenis, ":material/info:"))
+
+# Jendela "Yang baru": sekali per kunjungan. Selama status "cek", alur simpan otomatis masih akan
+# memanggil st.rerun(), jadi jendela baru dibuka pada putaran sesudahnya.
+if ss.get("_yang_baru", "belum") == "belum" and ss["_autosave_status"] != "cek":
+    ss["_yang_baru"] = "buka"
+if ss.get("_yang_baru") == "buka":
+    jendela_yang_baru()
 
 if ss["_autosave_status"] == "tanya":
     inf = ss.get("_autosave_info") or {}
@@ -650,9 +765,60 @@ Tahun | Jumlah
 [[/TABEL]]
 ```
 - Rumus: `[[RUMUS: Y = a + bX]]`, bernomor (1), (2), dan seterusnya di kanan
+- Tabel dari Excel atau CSV: pakai **Sisipkan tabel dari Excel/CSV** di bawah, hasilnya penanda tabel yang sama
+- Rujukan silang: beri label berawalan `#` di ujung penanda, lalu tulis `[[REF: #label]]` di kalimat:
+```
+[[TABEL: Hasil Uji Regresi | Data primer | #regresi]]
+...
+[[/TABEL]]
+Hasil uji ditunjukkan pada [[REF: #regresi]].
+```
+  Kalimat itu menjadi "Hasil uji ditunjukkan pada Tabel 4.2." dan nomornya ikut berubah bila urutan isi berubah. Gambar otomatis berlabel nama filenya tanpa ekstensi (`grafik.png` menjadi `#grafik`). Rumus: `[[RUMUS: Y = a + bX | #model]]` dirujuk sebagai "Persamaan (1)".
 
 Nomor tabel dan gambar (Tabel 3.1., Gambar 4.2.) dihitung otomatis per bab. Sumber boleh dikosongkan bila hasil olahan sendiri.
+
+Kutipan seperti `(Santoso, 2021)` atau `Santoso dan Putri (2021)`, termasuk di kolom Sumber gambar dan tabel, dicocokkan dengan daftar pustaka. Hasilnya ada di tab Preview dan tab Pustaka & lampiran.
 """)
+    with st.expander("Sisipkan tabel dari Excel/CSV"):
+        st.caption("Upload file .xlsx atau .csv, pilih barisnya, lalu tabelnya ditulis sebagai penanda [[TABEL]] di "
+                   "akhir subbab yang kamu pilih. Setelah itu masih bisa disunting seperti tabel yang diketik sendiri.")
+        st.file_uploader("File Excel (.xlsx) atau CSV", type=["xlsx", "csv"], key="upload_tabel")
+        st.button("Baca file tabel", on_click=cb_baca_tabel)
+        lembar = ss.get("_tabel_lembar")
+        if lembar:
+            nonce = ss["_tabel_nonce"]
+            nama_sheet = (st.selectbox("Sheet", list(lembar), key=f"tabel_sheet{nonce}") if len(lembar) > 1
+                          else next(iter(lembar)))
+            baris_tabel = tbi.rapikan(lembar[nama_sheet])
+            if not baris_tabel:
+                st.caption("Sheet ini kosong.")
+            else:
+                n_baris = len(baris_tabel)
+                c1, c2 = st.columns(2)
+                awal = c1.number_input("Baris awal (menjadi header tabel)", 1, n_baris, 1,
+                                       key=f"tabel_awal{nonce}_{nama_sheet}")
+                akhir = c2.number_input("Baris akhir", 1, n_baris, n_baris, key=f"tabel_akhir{nonce}_{nama_sheet}")
+                judul_tabel = st.text_input("Judul tabel", key="tabel_judul", placeholder="mis. Statistik Deskriptif")
+                sumber_tabel = st.text_input("Sumber (kosongkan bila hasil olahan sendiri)", key="tabel_sumber")
+                tujuan = [f"{i + 1}.{j + 1} {ss.get(f'bab{i}_s{j}_judul', '')}".strip() for i, j in daftar_subbab()]
+                st.selectbox("Sisipkan ke subbab", tujuan, key="tabel_tujuan")
+                koma = st.checkbox("Pakai koma untuk desimal", value=True, key="tabel_koma")
+                dipilih = baris_tabel[int(awal) - 1: int(akhir)]
+                pratinjau = tbi.format_tabel(dipilih, koma)
+                if not pratinjau:
+                    st.warning("Rentang yang dipilih kosong. Baris akhir harus sama atau sesudah baris awal.")
+                    ss["_tabel_siap"] = None
+                else:
+                    st.dataframe(pratinjau, hide_index=True)
+                    st.caption(f"{len(pratinjau)} baris, {len(pratinjau[0])} kolom. Baris paling atas menjadi header.")
+                    for p in tbi.peringatan_ukuran(dipilih):
+                        st.warning(p)
+                    ss["_tabel_siap"] = tbi.ke_penanda(dipilih, judul_tabel, sumber_tabel, koma)
+                st.button("Sisipkan ke subbab", type="primary", on_click=cb_sisipkan_tabel,
+                          disabled=not (ss.get("_tabel_siap") and judul_tabel.strip()))
+                if not judul_tabel.strip():
+                    st.caption("Isi judul tabel dulu. Nomornya (mis. Tabel 4.2) dihitung otomatis.")
+
     for i in range(ss["jml_bab"]):
         romawi = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X"][i] if i < 10 else str(i + 1)
         with st.expander(f"BAB {romawi}  {ss.get(f'bab{i}_judul', '').upper()}", expanded=(i == 0)):
@@ -706,6 +872,24 @@ with tab_akhir:
         f"{n_ref} referensi. Panduan meminta minimal 10 artikel jurnal. "
         "Urutan abjad diatur otomatis; pakai `*judul*` untuk huruf miring.")
 
+    cek_sitasi = sitasi.periksa(kumpulkan_data())
+    if cek_sitasi["ada_isi"] and (cek_sitasi["jumlah"] or n_ref):
+        n_tanpa, n_tidak = len(cek_sitasi["tanpa_pustaka"]), len(cek_sitasi["tidak_dikutip"])
+        ringkas = (f"Cek sitasi: {cek_sitasi['cocok']} kutipan cocok, {n_tanpa} tanpa pustaka, "
+                   f"{n_tidak} entri tidak dikutip.")
+        if n_tanpa or n_tidak:
+            with st.expander(ringkas):
+                if n_tanpa:
+                    st.markdown("**Kutipan yang tidak ada di daftar pustaka**\n" + "\n".join(
+                        f"- {k['kutipan']} di {k['lokasi']}" for k in cek_sitasi["tanpa_pustaka"]))
+                if n_tidak:
+                    st.markdown("**Entri yang tidak pernah dikutip di isi bab**\n" + "\n".join(
+                        f"- {t['baris']}" for t in cek_sitasi["tidak_dikutip"]))
+                st.caption("Yang dicek: kutipan di isi bab dan kolom Sumber pada gambar dan tabel. "
+                           "Aplikasi hanya melapor, isi bab dan daftar pustaka tidak diubah.")
+        else:
+            st.caption(ringkas)
+
     st.subheader("Tambah referensi")
     st.caption("Upload PDF jurnal atau tempel DOI-nya, dan rinciannya diisi otomatis dari basis data Crossref lalu "
                "disusun dengan gaya APA edisi 7. Sumber tanpa DOI (buku, jurnal lokal, halaman web) bisa diisi sendiri. "
@@ -749,6 +933,32 @@ with tab_akhir:
         c2.button("Kosongkan", on_click=cb_kosongkan_ref)
     st.caption("Periksa huruf besar-kecil judul dan nama penulis sebelum menambahkan; data dari Crossref tidak selalu "
                "rapi. Setelah ditambahkan, barisnya masih bisa kamu sunting langsung di kotak Daftar pustaka.")
+
+    st.subheader("Impor dari Zotero atau Mendeley")
+    st.caption("Ekspor referensimu ke file .bib atau .ris, lalu upload di sini. Zotero: klik kanan koleksi, Export "
+               "Collection, pilih BibTeX. Mendeley: pilih referensinya, File, Export, pilih BibTeX atau RIS.")
+    st.file_uploader("Impor dari Zotero/Mendeley (.bib atau .ris)", type=["bib", "ris"], key="upload_impor_ref")
+    st.button("Baca file referensi", on_click=cb_baca_impor_ref)
+    impor = ss.get("_impor_ref")
+    if impor:
+        sudah_ada = {b.strip() for b in ss["daftar_pustaka"].splitlines() if b.strip()}
+        st.markdown(f"**{len(impor)} referensi terbaca.** Hilangkan centang pada yang tidak mau dipakai.")
+        for i, isian in enumerate(impor):
+            baris = pst.format_apa(isian)
+            ganda, kurang = baris in sudah_ada, pst.kurang(isian)
+            st.checkbox(baris, value=not ganda, key=f"impor{ss['_impor_nonce']}_{i}", disabled=ganda)
+            if ganda:
+                st.caption("Sudah ada di daftar pustaka, jadi tidak ditambahkan lagi.")
+            elif kurang:
+                st.caption(f"Belum lengkap: {', '.join(kurang)}. Bisa dilengkapi nanti di kotak Daftar pustaka.")
+        for p in ss.get("_impor_peringatan", []):
+            st.warning(p)
+        c1, c2, _ = st.columns([1.6, 1, 2.4])
+        c1.button("Tambahkan yang dicentang", type="primary", on_click=cb_tambah_impor_ref)
+        c2.button("Batal", key="batal_impor_ref", on_click=cb_batal_impor_ref)
+    elif ss.get("_impor_peringatan"):
+        for p in ss["_impor_peringatan"]:
+            st.warning(p)
 
     st.subheader("Lampiran")
     if not ss["jml_lampiran"]:
@@ -842,6 +1052,7 @@ with tab_gen:
         except Exception as e:
             ss.pop("_hasil", None)
             st.error(f"File Word gagal dibuat: {e}")
+        ss.pop("_hasil_pdf", None)   # PDF lama tidak lagi cocok dengan file Word yang baru
     if ss.get("_hasil"):
         st.success("File Word sudah dibuat. Buat ulang setiap kali isian atau margin berubah.")
         if MODE_WEB:
@@ -851,6 +1062,21 @@ with tab_gen:
         nama_file = (ss.get("id_nim") or "laporan").replace("/", "_")
         st.download_button("Unduh .docx", data=ss["_hasil"], file_name=f"TA_{nama_file}.docx",
                            mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document")
+        if epdf.tersedia():
+            st.subheader("PDF pratinjau")
+            st.caption("Untuk dikirim ke pembimbing tanpa membuka Word dulu. Pemotongan halaman bisa sedikit berbeda "
+                       "dari Word, jadi untuk pengumpulan resmi simpan PDF dari Word.")
+            if st.button("Buat PDF pratinjau"):
+                docx_bytes = ss["_hasil"] if isinstance(ss["_hasil"], bytes) else ss["_hasil"].getvalue()
+                try:
+                    with st.spinner("Membuat PDF, biasanya kurang dari satu menit."):
+                        ss["_hasil_pdf"] = epdf.ke_pdf(docx_bytes)
+                except epdf.GagalPdf as e:
+                    ss.pop("_hasil_pdf", None)
+                    st.error(str(e))
+            if ss.get("_hasil_pdf"):
+                st.download_button("Unduh PDF", data=ss["_hasil_pdf"], file_name=f"TA_{nama_file}.pdf",
+                                   mime="application/pdf")
     st.subheader("Setelah file dibuka di Word")
     st.markdown("""
 1. Klik **Yes** saat Word bertanya mau memperbarui *fields*, atau tekan **Ctrl + A** lalu **F9** (di Mac: **Cmd + A** lalu **Fn + F9**).

@@ -44,8 +44,8 @@
       "judul": "Tinjauan Pustaka",
       "subbab": [
         {"judul": "Kondisi Umum/Deskripsi Topik Penelitian", "isi": "Bagian ini menjelaskan kondisi umum topik penelitian."},
-        {"judul": "Landasan Teori", "isi": "### teori perilaku terencana\nIsi sub-subbab tentang teori yang mendasari penelitian.\n### literasi keuangan\nIsi sub-subbab kedua."},
-        {"judul": "Penelitian Terdahulu", "isi": "Ringkasan penelitian terdahulu yang relevan."},
+        {"judul": "Landasan Teori", "isi": "### teori perilaku terencana\nIsi sub-subbab tentang teori yang mendasari penelitian. Niat berperilaku dibentuk oleh sikap, norma subjektif, dan persepsi kendali (Ajzen, 1991).\n### literasi keuangan\nIsi sub-subbab kedua. Lusardi dan Mitchell (2014) menunjukkan bahwa literasi keuangan berkaitan dengan keputusan keuangan yang lebih baik."},
+        {"judul": "Penelitian Terdahulu", "isi": "Ringkasan penelitian terdahulu yang relevan. Keterlibatan belajar ikut memengaruhi hasil edukasi keuangan (Brown, 2021)."},
         {"judul": "Hipotesis", "isi": "H1: Literasi keuangan berpengaruh positif terhadap keputusan investasi."}
       ]
     },
@@ -75,7 +75,7 @@
       ]
     }
   ],
-  "daftar_pustaka": "Brown, T. (2021). *Student motivation and classroom engagement*. Oxford University Press.\nAjzen, I. (1991). The theory of planned behavior. *Organizational Behavior and Human Decision Processes*, 50(2), 179–211.\nLusardi, A., & Mitchell, O. S. (2014). The economic importance of financial literacy. *Journal of Economic Literature*, 52(1), 5–44.",
+  "daftar_pustaka": "Brown, T. (2021). *Student motivation and classroom engagement*. Oxford University Press.\nAjzen, I. (1991). The theory of planned behavior. *Organizational Behavior and Human Decision Processes*, 50(2), 179–211.\nLusardi, A., & Mitchell, O. S. (2014). The economic importance of financial literacy. *Journal of Economic Literature*, 52(1), 5–44.\nKustodian Sentral Efek Indonesia. (2025). *Statistik pasar modal Indonesia*. KSEI.",
   "lampiran": [
     {"judul": "kuesioner penelitian", "isi": "Berikut kuesioner yang digunakan dalam penelitian ini.", "gambar": ""},
     {"judul": "data mentah responden", "isi": "Data mentah dapat diakses melalui tautan yang disediakan penulis.", "gambar": ""}

@@ -19,7 +19,10 @@ Nama tombol di kedua situs bisa berubah sewaktu-waktu; kalau ada yang berbeda, i
    bukan foldernya, supaya `app.py` dan `.streamlit` berada langsung di halaman depan repository.
 4. Klik **Commit changes**.
 
-Periksa hasilnya: di halaman depan repository harus langsung terlihat `app.py`, `requirements.txt`,
+File `packages.txt` harus ikut terunggah. Isinya paket sistem yang dipasang Streamlit Community Cloud saat deploy
+(LibreOffice untuk tombol PDF pratinjau). Tanpa file itu aplikasi tetap jalan, hanya tombol PDF-nya tidak muncul.
+
+Periksa hasilnya: di halaman depan repository harus langsung terlihat `app.py`, `requirements.txt`, `packages.txt`,
 dan folder `.streamlit`. Jangan pernah mengunggah folder `autosave` (isinya pekerjaan pribadimu).
 
 ## 3. Deploy di Streamlit Community Cloud

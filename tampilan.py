@@ -68,6 +68,12 @@ header[data-testid="stHeader"] { background:transparent; }
 .st-key-tombol_tema button [data-testid="stMarkdownContainer"] {
   position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%); white-space:nowrap; }
 
+/* ---------- jendela (st.dialog) ---------- */
+[role="dialog"] { background:var(--kertas); color:var(--tinta); border:1px solid var(--garis); border-radius:4px; }
+[role="dialog"] p, [role="dialog"] li, [role="dialog"] summary, [role="dialog"] label { font-family:var(--ui); color:var(--tinta); }
+[role="dialog"] [data-testid="stCaptionContainer"] p { color:var(--redup); }
+[role="dialog"] button[aria-label="Close"] { color:var(--tinta); min-width:44px; min-height:44px; }
+
 /* ---------- kop ---------- */
 .kop { display:flex; align-items:flex-end; justify-content:space-between; gap:2rem; flex-wrap:wrap;
        padding-bottom:1.1rem; border-bottom:2px solid var(--tinta); margin-bottom:0.9rem; }

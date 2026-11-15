@@ -1,0 +1,179 @@
+TUGAS AKHIR
+PENGARUH LITERASI KEUANGAN TERHADAP KEPUTUSAN INVESTASI MAHASISWA DI YOGYAKARTA
+THE EFFECT OF FINANCIAL LITERACY ON STUDENTS' INVESTMENT DECISIONS IN YOGYAKARTA
+Disusun untuk memenuhi persyaratan mencapai gelar Sarjana Terapan
+Dosen Pembimbing
+Dr. Nama Dosen Pembimbing, S.E., M.Sc.
+[Lambang UGM 5,5 × 5,71 cm, upload logo di aplikasi]
+Oleh:
+Nama Mahasiswa Contoh
+21/000000/SV/00000
+SARJANA TERAPAN PERBANKAN
+DEPARTEMEN EKONOMIKA DAN BISNIS
+SEKOLAH VOKASI
+UNIVERSITAS GADJAH MADA
+2026
+
+HALAMAN PENGESAHAN
+TUGAS AKHIR
+Pengaruh Literasi Keuangan terhadap Keputusan Investasi Mahasiswa di Yogyakarta
+Disusun oleh:
+Nama Mahasiswa Contoh
+21/000000/SV/00000
+Telah diujikan dan diseminarkan
+pada tanggal 20 November 2026
+Penguji I/
+Ketua Penguji
+Nama Ketua Penguji, S.E., M.Ec.Dev.
+NIP/NIKA 111111111111111111 | Penguji II/Sekretaris Penguji/
+Dosen Pembimbing Tugas Akhir
+Dr. Nama Dosen Pembimbing, S.E., M.Sc.
+NIP/NIKA 222222222222222222
+
+Penguji III/
+Anggota Penguji
+Nama Anggota Penguji, S.E., M.B.A.
+NIP/NIKA 333333333333333333
+
+Mengetahui,
+Ketua Program Studi Sarjana Terapan Perbankan
+Sekolah Vokasi Universitas Gadjah Mada
+Nama Ketua Program Studi, S.E., M.Sc.
+NIP/NIKA 444444444444444444
+
+PERNYATAAN BEBAS PLAGIASI
+Saya yang bertanda tangan di bawah ini:
+Nama	: Nama Mahasiswa Contoh
+NIM	: 21/000000/SV/00000
+Tahun terdaftar	: 2022
+Program studi	: Sarjana Terapan Perbankan
+Fakultas/Sekolah	: Sekolah Vokasi
+
+Menyatakan bahwa dalam dokumen ilmiah Tugas Akhir ini tidak terdapat bagian dari karya ilmiah lain yang telah diajukan untuk memperoleh gelar akademik di suatu Lembaga Pendidikan Tinggi, dan juga tidak terdapat karya atau pendapat yang pernah ditulis atau diterbitkan oleh orang/Lembaga lain, kecuali yang secara tertulis disitasi dalam dokumen ini dan disebutkan sumbernya secara lengkap dalam daftar pustaka.
+Dengan demikian saya menyatakan bahwa dokumen ilmiah ini bebas dari unsur-unsur plagiasi dan apabila dokumen ilmiah Tugas Akhir ini di kemudian hari terbukti merupakan plagiasi dari hasil karya penulis lain dan/atau dengan sengaja mengajukan karya atau pendapat yang merupakan hasil karya penulis lain, maka penulis bersedia menerima sanksi akademik dan/atau sanksi hukum yang berlaku.
+Yogyakarta, 7 November 2026
+Materai Rp 10.000,00
+Nama Mahasiswa Contoh
+21/000000/SV/00000
+
+KATA PENGANTAR
+Puji syukur penulis panjatkan ke hadirat Tuhan Yang Maha Esa atas rahmat dan karunia-Nya sehingga Tugas Akhir ini dapat diselesaikan dengan baik.
+Penulis mengucapkan terima kasih kepada dosen pembimbing, dewan penguji, keluarga, serta teman-teman yang telah memberikan dukungan selama proses penyusunan Tugas Akhir ini.
+Penulis menyadari bahwa Tugas Akhir ini masih memiliki kekurangan. Oleh karena itu, saran dan masukan sangat penulis harapkan.
+Yogyakarta, 7 November 2026
+Penulis
+
+DAFTAR ISI
+Klik kanan di sini lalu pilih Update Field untuk menampilkan daftar isi.
+
+DAFTAR TABEL
+Klik kanan di sini lalu pilih Update Field.
+
+DAFTAR GAMBAR
+Klik kanan di sini lalu pilih Update Field.
+
+DAFTAR LAMPIRAN
+Klik kanan di sini lalu pilih Update Field.
+
+DAFTAR ISTILAH
+Literasi keuangan	: pengetahuan dan keterampilan mengelola keuangan
+Return	: tingkat imbal hasil dari suatu investasi
+
+INTISARI
+Penelitian ini bertujuan untuk menganalisis pengaruh literasi keuangan terhadap keputusan investasi mahasiswa. Data diperoleh melalui kuesioner kepada 120 responden dan dianalisis menggunakan regresi linear sederhana. Hasil penelitian menunjukkan bahwa literasi keuangan berpengaruh positif dan signifikan terhadap keputusan investasi.
+Kata kunci: keputusan investasi, literasi keuangan, mahasiswa
+
+ABSTRACT
+This study aims to analyze the effect of financial literacy on students' investment decisions. Data were collected through questionnaires from 120 respondents and analyzed using simple linear regression. The results show that financial literacy has a positive and significant effect on investment decisions.
+Keywords: financial literacy, investment decision, students
+
+BAB I PENDAHULUAN
+1.1 Latar Belakang
+Paragraf pertama setelah judul subbab ditulis rata kiri tanpa menjorok, sesuai aturan panduan. Kalimat ini hanya contoh isi untuk menguji format paragraf yang panjang agar terlihat bagaimana teks rata kanan-kiri (justify) terbentuk pada halaman.
+Paragraf kedua dan seterusnya menjorok 1,25 cm. Istilah asing seperti financial literacy otomatis ditulis miring dengan memberi tanda bintang. Data jumlah investor dapat dilihat pada Tabel 1.1.
+Tabel 1.1. Jumlah Investor Pasar Modal di DIY
+Tahun | Jumlah Investor | Pertumbuhan (%)
+2022 | 150.000 | 12,5
+2023 | 172.000 | 14,7
+2024 | 198.000 | 15,1
+Sumber: KSEI, 2025
+Tabel 1.1 menunjukkan bahwa jumlah investor terus meningkat setiap tahun.
+1.2 Rumusan Masalah
+Rumusan masalah dinyatakan dalam kalimat pernyataan, bukan pertanyaan.
+1.3 Pertanyaan Penelitian
+Pertanyaan penelitian ini adalah sebagai berikut.
+1.	Apakah literasi keuangan berpengaruh terhadap keputusan investasi mahasiswa?
+2.	Seberapa besar pengaruh tersebut?
+1.4 Tujuan Penelitian
+Tujuan penelitian disusun sesuai dengan pertanyaan penelitian.
+1.5 Manfaat Penelitian
+Manfaat penelitian ini terdiri atas dua jenis.
+1.	Manfaat teoretis
+a.	Menambah kajian literatur tentang keuangan perilaku.
+b.	Menjadi rujukan penelitian berikutnya.
+2.	Manfaat praktis
+a.	Menjadi bahan pertimbangan bagi penyelenggara edukasi keuangan.
+
+BAB II TINJAUAN PUSTAKA
+2.1 Kondisi Umum/Deskripsi Topik Penelitian
+Bagian ini menjelaskan kondisi umum topik penelitian.
+2.2 Landasan Teori
+2.2.1 Teori Perilaku Terencana
+Isi sub-subbab tentang teori yang mendasari penelitian. Niat berperilaku dibentuk oleh sikap, norma subjektif, dan persepsi kendali (Ajzen, 1991).
+2.2.2 Literasi Keuangan
+Isi sub-subbab kedua. Lusardi dan Mitchell (2014) menunjukkan bahwa literasi keuangan berkaitan dengan keputusan keuangan yang lebih baik.
+2.3 Penelitian Terdahulu
+Ringkasan penelitian terdahulu yang relevan. Keterlibatan belajar ikut memengaruhi hasil edukasi keuangan (Brown, 2021).
+2.4 Hipotesis
+H1: Literasi keuangan berpengaruh positif terhadap keputusan investasi.
+
+BAB III METODE PENELITIAN
+3.1 Desain Penelitian
+Penelitian ini menggunakan pendekatan kuantitatif.
+3.2 Jenis dan Sumber Data
+Data primer diperoleh melalui kuesioner.
+3.3 Teknik Pengumpulan Data
+Sampel diambil menggunakan teknik purposive sampling.
+3.4 Teknik Analisis Data
+Model regresi yang digunakan adalah sebagai berikut.
+	Y = a + bX + e	(1)
+Y adalah keputusan investasi, X adalah literasi keuangan, a adalah konstanta, b adalah koefisien regresi, dan e adalah error term.
+
+BAB IV HASIL DAN PEMBAHASAN
+4.1 Deskripsi Data
+Sebaran responden berdasarkan angkatan dapat dilihat pada Gambar 4.1.
+
+Gambar 4.1. Sebaran Responden Berdasarkan Angkatan
+Sumber: Data primer diolah, 2026
+Gambar 4.1 memperlihatkan bahwa responden terbanyak berasal dari angkatan 2022.
+4.2 Hasil Analisis
+Hasil uji regresi disajikan pada Tabel 4.1.
+Tabel 4.1. Hasil Uji Regresi Linear Sederhana
+Variabel | Koefisien | t-hitung | Sig.
+Konstanta | 1,245 | 3,120 | 0,002
+Literasi Keuangan | 0,512 | 6,845 | 0,000
+
+Variabel literasi keuangan signifikan pada tingkat 5%.
+4.3 Interpretasi dan Pembahasan
+Temuan ini sejalan dengan penelitian terdahulu.
+
+BAB V KESIMPULAN DAN SARAN
+5.1 Kesimpulan
+Literasi keuangan berpengaruh positif dan signifikan terhadap keputusan investasi mahasiswa.
+5.2 Saran
+Penyelenggara edukasi keuangan disarankan memperluas program literasi di kampus.
+5.3 Keterbatasan Penelitian
+Penelitian ini terbatas pada mahasiswa di satu kota.
+
+DAFTAR PUSTAKA
+Ajzen, I. (1991). The theory of planned behavior. Organizational Behavior and Human Decision Processes, 50(2), 179–211.
+Brown, T. (2021). Student motivation and classroom engagement. Oxford University Press.
+Kustodian Sentral Efek Indonesia. (2025). Statistik pasar modal Indonesia. KSEI.
+Lusardi, A., & Mitchell, O. S. (2014). The economic importance of financial literacy. Journal of Economic Literature, 52(1), 5–44.
+
+LAMPIRAN
+Lampiran 1. Kuesioner Penelitian
+Berikut kuesioner yang digunakan dalam penelitian ini.
+
+Lampiran 2. Data Mentah Responden
+Data mentah dapat diakses melalui tautan yang disediakan penulis.

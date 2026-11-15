@@ -11,6 +11,8 @@ import base64
 import html
 import re
 
+import rujukan
+import sitasi
 from generator import (FORMAT_DEB_SV_UGM, RE_GAMBAR, RE_LIST1, RE_LIST2, RE_LIST3, RE_RUMUS, RE_TABEL_BUKA,
                        RE_TABEL_TUTUP, ROMAWI, format_dari, hitung_kata, jarak_footer_cm, judul_kapital,
                        urutkan_kata_kunci)
@@ -75,6 +77,8 @@ def kerangka(data, gambar=None):
     gambar = gambar or {}
     hasil, peringatan = [], []
     no_rumus = 0
+    peta, label_ganda = rujukan.peta_label(data)
+    peringatan += [f"Label #{l} dipakai lebih dari sekali. Rujukan memakai yang pertama." for l in label_ganda]
     for bi, bab in enumerate(data.get("bab", []), start=1):
         n_tabel = n_gambar = 0
         subs = []
@@ -84,7 +88,10 @@ def kerangka(data, gambar=None):
             info = {"no": f"{bi}.{sj}", "judul": judul_kapital(sub["judul"]), "paragraf": 0, "kata": 0,
                     "subsub": [], "tabel": [], "gambar": [], "rumus": 0}
             n_subsub = 0
-            for el in uraikan_isi(sub.get("isi")):
+            hilang = []
+            isi = rujukan.siapkan(sub.get("isi"), peta, hilang)
+            peringatan += [f"Rujukan #{l} di subbab {bi}.{sj} tidak ditemukan. Periksa labelnya." for l in hilang]
+            for el in uraikan_isi(isi):
                 if el[0] in ("para", "list"):
                     info["paragraf"] += 1
                     info["kata"] += hitung_kata(el[-1])
@@ -124,6 +131,7 @@ def kerangka(data, gambar=None):
                     ("pembimbing", "Dosen pembimbing")):
         if not (data.get("identitas", {}).get(k) or "").strip():
             peringatan.append(f"{nama} di tab Identitas belum diisi.")
+    peringatan += sitasi.kalimat_cek(sitasi.periksa(data))
     return hasil, peringatan
 
 
@@ -132,6 +140,7 @@ def kerangka(data, gambar=None):
 # ---------------------------------------------------------------------------
 def _inline(teks):
     t = html.escape(teks or "")
+    t = re.sub(rf"{rujukan.BUKA}(.+?){rujukan.TUTUP}", r'<span class="ph">\1</span>', t)
     t = re.sub(r"\*\*(.+?)\*\*", r"<b>\1</b>", t)
     t = re.sub(r"\*(.+?)\*", r"<i>\1</i>", t)
     return t
@@ -163,6 +172,7 @@ class PreviewHTML:
         self.halaman = []
         self.daftar_tabel, self.daftar_gambar = [], []
         self.no_rumus = 0
+        self.peta_label, _ = rujukan.peta_label(data)
 
     def lembar(self, label, isi, nomor=""):
         self.halaman.append((label, isi, nomor))
@@ -282,7 +292,7 @@ class PreviewHTML:
                 continue
             out.append(f'<h2>{no}.{sj} {html.escape(judul_kapital(sub["judul"]))}</h2>')
             pertama, n_subsub, kosong = True, 0, True
-            for el in uraikan_isi(sub.get("isi")):
+            for el in uraikan_isi(rujukan.siapkan(sub.get("isi"), self.peta_label)):
                 kosong = False
                 if el[0] == "subsub":
                     n_subsub += 1
