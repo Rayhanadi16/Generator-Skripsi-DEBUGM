@@ -102,8 +102,8 @@ def test_kalimat_cek_meringkas_bila_banyak():
 
 
 def test_tampil_di_aplikasi(aplikasi):
-    from conftest import tombol
-    at = tombol(aplikasi, "Isi dengan data contoh").click().run()
+    from conftest import ke_tahap, tombol
+    at = ke_tahap(tombol(aplikasi, "Isi dengan data contoh").click().run(), "bahan")
     assert not at.exception
     assert any("Cek sitasi: 4 kutipan cocok, 0 tanpa pustaka, 0 entri tidak dikutip." in c.value for c in at.caption)
 

@@ -1,9 +1,10 @@
 """
-Generator Laporan Tugas Akhir — tampilan aplikasi (Streamlit)
+Generator Laporan Tugas Akhir : tampilan aplikasi (Streamlit)
 Jalankan:  streamlit run app.py
 """
 
 import json
+import re
 from pathlib import Path
 from datetime import date
 
@@ -22,6 +23,7 @@ import sitasi
 import impor_pustaka as ipt
 import tabel_impor as tbi
 import ekspor_pdf as epdf
+import periksa_tulisan as ptl
 import tampilan as tp
 from pengaturan import MODE_WEB
 
@@ -70,6 +72,7 @@ def isi_default():
             ss[f"bab{i}_s{j}_judul"] = s
             ss[f"bab{i}_s{j}_isi"] = ""
     ss["jml_lampiran"] = 0
+    ss["abaikan_kata"] = []
     atur_margin(margin_bawaan())
     isi_ref(pst.KOSONG)
     ss["rf_doi"] = ""
@@ -84,6 +87,48 @@ def atur_margin(nilai):
 def margin_sekarang():
     bawaan = margin_bawaan()
     return {s: float(ss.get(f"mg_{s}", bawaan[s])) for s in SISI_MARGIN}
+
+
+def cb_ganti_kata(kata, saran):
+    n = ptl.ganti_semua(ss, kata, saran)
+    ss["_pesan"] = ("success", f"“{kata}” diganti menjadi “{saran}” di {n} tempat.")
+
+
+def cb_miringkan_kata(kata):
+    n = ptl.jadikan_miring(ss, kata)
+    ss["_pesan"] = ("success", f"“{kata}” dijadikan miring di {n} tempat.")
+
+
+def cb_lebih_banyak_typo():
+    ss["_typo_tampil"] = ss.get("_typo_tampil", TYPO_PER_HALAMAN) + TYPO_PER_HALAMAN
+
+
+TYPO_PER_HALAMAN = 8   # saran ejaan lambat dihitung, jadi typo ditampilkan bertahap
+
+
+def baris_lokasi(t):
+    """Lokasi pertama sebagai keterangan, sisanya di dalam expander."""
+    _, label, cuplikan = t["lokasi"][0]
+    st.caption(f"{label}: {cuplikan_md(cuplikan)}")
+    if len(t["lokasi"]) > 1:
+        with st.expander(f"Lokasi lainnya ({len(t['lokasi']) - 1})"):
+            for _, label, cuplikan in t["lokasi"][1:]:
+                st.caption(f"{label}: {cuplikan_md(cuplikan)}")
+
+
+def cb_abaikan_kata(kata):
+    if kata not in ss["abaikan_kata"]:
+        ss["abaikan_kata"] = ss["abaikan_kata"] + [kata]
+
+
+def cb_kembalikan_kata(kata):
+    ss["abaikan_kata"] = [k for k in ss["abaikan_kata"] if k != kata]
+
+
+def cuplikan_md(cuplikan):
+    """Cuplikan dari periksa_tulisan memakai ⟦ ⟧ sebagai penanda kata; di sini dijadikan teks tebal."""
+    aman = re.sub(r"([\\`*_\[\]#|~$])", r"\\\1", cuplikan)
+    return aman.replace("⟦", "**").replace("⟧", "**")
 
 
 def cb_buka_yang_baru():
@@ -132,6 +177,7 @@ def kumpulkan_data():
         "lampiran": [],
     }
     data["format"] = {f"margin_{s}_cm": v for s, v in margin_sekarang().items()}
+    data["abaikan_kata"] = list(ss.get("abaikan_kata", []))
     for k in FIELD_TEKS:
         data[k] = ss.get(k, "")
     for i in range(ss["jml_bab"]):
@@ -166,6 +212,7 @@ def muat_data(data):
         for j, s in enumerate(subs):
             ss[f"bab{i}_s{j}_judul"] = s.get("judul", "")
             ss[f"bab{i}_s{j}_isi"] = s.get("isi", "")
+    ss["abaikan_kata"] = list(data.get("abaikan_kata") or [])   # file progres lama belum punya kunci ini
     lamps = data.get("lampiran", [])
     ss["jml_lampiran"] = len(lamps)
     for k, l in enumerate(lamps):
@@ -303,7 +350,7 @@ def cb_muat_contoh():
     grafik = folder / "grafik_contoh.png"
     if grafik.exists():   # gambar contoh ikut dimuat supaya tidak perlu diupload sendiri
         ss["_gambar_simpan"] = {**ss.get("_gambar_simpan", {}), grafik.name: grafik.read_bytes()}
-    ss["_pesan"] = ("success", "Data contoh dimuat. Lihat hasilnya di tab Preview.")
+    ss["_pesan"] = ("success", "Data contoh dimuat. Lihat hasilnya di tahap 3, tab Preview.")
 
 
 def cb_baca_tabel():
@@ -406,6 +453,7 @@ def cb_terapkan_draft():
     data["identitas"] = sekarang["identitas"]
     data["pengesahan"] = sekarang["pengesahan"]
     data["format"] = sekarang["format"]      # margin yang sudah diatur tidak ikut tertimpa
+    data["abaikan_kata"] = sekarang["abaikan_kata"]
     data["istilah"] = sekarang.get("istilah", "")
     for k in ("kata_pengantar", "intisari", "kata_kunci", "abstract", "keywords", "daftar_pustaka"):
         if not data.get(k):          # jangan hapus isian lama bila draft tidak memuatnya
@@ -486,7 +534,36 @@ def ambil_logo():
     return ss.get("_logo_simpan")
 
 
+def jaga_isian():
+    """Pertahankan isian milik tahap yang sedang tidak dibuka.
+
+    Streamlit menghapus nilai widget yang tidak dirender dalam satu putaran. Sejak navigasi dibagi empat tahap,
+    hanya widget tahap aktif yang dirender, jadi tanpa ini isian Identitas hilang begitu pengguna pindah ke
+    tahap Buat file. Menyalin kunci ke dirinya sendiri, sebelum widget apa pun dibuat, menjadikannya nilai biasa
+    di session_state yang tidak ikut dibersihkan.
+    """
+    awalan = ("id_", "pg_", "bab", "lamp", "mg_", "rf_")
+    lain = set(FIELD_TEKS) | {"mode_preview", "zoom_preview", "tabel_judul", "tabel_sumber", "tabel_koma"}
+    for k in list(ss.keys()):
+        if isinstance(k, str) and (k.startswith(awalan) or k in lain):
+            ss[k] = ss[k]
+
+
+def jaga_unggahan():
+    """Salin gambar dan logo yang diunggah ke session_state biasa.
+
+    Nilai file_uploader tidak bisa dijaga dengan cara jaga_isian(), jadi isinya disalin selagi uploadernya masih
+    ada. Tanpa ini gambar hilang begitu pengguna meninggalkan tahap Bahan pendukung.
+    """
+    if ss.get("upload_gambar"):
+        ss["_gambar_simpan"] = {**ss.get("_gambar_simpan", {}), **{g.name: g.getvalue() for g in ss["upload_gambar"]}}
+    if ss.get("upload_logo"):
+        ss["_logo_simpan"] = ss["upload_logo"].getvalue()
+
+
 isi_default()
+jaga_isian()
+jaga_unggahan()
 
 SIMPAN_BROWSER = MODE_WEB and sb.TERSEDIA
 
@@ -599,16 +676,8 @@ if ss["_autosave_status"] == "tanya":
         k1.button("Lanjutkan", type="primary", on_click=cb_lanjutkan_autosave, use_container_width=True)
         k2.button("Mulai dari awal", on_click=cb_mulai_baru, use_container_width=True)
 
-NAMA_TAB = ["Draft", "Identitas", "Bagian awal", "Bab", "Pustaka & lampiran", "Gambar & logo",
-            "Format halaman", "Preview", "Buat file Word"]
-try:   # Streamlit baru: ingat tab yang sedang dibuka saat halaman dimuat ulang
-    (tab_draft, tab_id, tab_awal, tab_bab, tab_akhir, tab_gbr,
-     tab_fmt, tab_prev, tab_gen) = st.tabs(NAMA_TAB, key="tab_utama")
-except TypeError:
-    tab_draft, tab_id, tab_awal, tab_bab, tab_akhir, tab_gbr, tab_fmt, tab_prev, tab_gen = st.tabs(NAMA_TAB)
-
 # ---------------------------------------------------------------------------
-with tab_draft:
+def tampil_draft():
     st.subheader("Mulai dari draft Word")
     st.caption("Sudah punya draft? Upload di sini. Setiap paragraf dibaca dan ditebak masuk ke bagian mana, "
                "lalu kamu cek hasilnya sebelum dimasukkan ke form. Belum punya draft? Lewati tab ini dan "
@@ -679,10 +748,10 @@ with tab_draft:
             st.warning(f"{sisa_merah} bagian masih belum ditempatkan dan akan dilewati.")
         st.button("Masukkan ke form", on_click=cb_terapkan_draft, type="primary")
         st.caption("Isian di tab Identitas dan margin yang sudah kamu atur tidak ditimpa. "
-                   "Setelah dimasukkan, cek penempatannya di tab Preview.")
+                   "Setelah dimasukkan, cek penempatannya di tahap 3, tab Preview.")
 
 # ---------------------------------------------------------------------------
-with tab_id:
+def tampil_identitas():
     st.subheader("Halaman sampul")
     st.text_input("Judul TA (Bahasa Indonesia)", key="id_judul_id")
     st.text_input("Judul TA (Bahasa Inggris)", key="id_judul_en")
@@ -723,7 +792,7 @@ with tab_id:
     c2.text_input("NIP/NIKA yang mengetahui", key="pg_mengetahui_nip")
 
 # ---------------------------------------------------------------------------
-with tab_awal:
+def tampil_awal():
     st.subheader("Kata pengantar")
     st.text_area("Kata pengantar", key="kata_pengantar", height=200, label_visibility="collapsed",
                  placeholder="Satu baris = satu paragraf.")
@@ -749,14 +818,14 @@ with tab_awal:
     st.caption("Opsional. Satu istilah per baris dengan format `istilah: arti`. Diurutkan abjad otomatis.")
 
 # ---------------------------------------------------------------------------
-with tab_bab:
+def tampil_bab():
     with st.expander("Cara menulis isi dan penanda khusus", expanded=False):
         st.markdown("""
 - **Satu baris = satu paragraf.** Paragraf pertama setelah judul otomatis rata kiri, berikutnya menjorok 1,25 cm.
 - `### Judul` untuk sub-subbab (bernomor otomatis, mis. 1.1.1)
 - `1. teks`, `a. teks`, `(1) teks` untuk perincian tingkat 1, 2, dan 3
 - `*kata*` untuk huruf *miring* (istilah asing), `**kata**` untuk huruf **tebal**
-- Gambar (upload dulu di tab Gambar & logo): `[[GAMBAR: nama_file.png | Judul Gambar | Sumber | lebar_cm]]`
+- Gambar (upload dulu di tahap 2, tab Gambar & logo): `[[GAMBAR: nama_file.png | Judul Gambar | Sumber | lebar_cm]]`
 - Tabel (baris pertama = header, kolom dipisah `|`):
 ```
 [[TABEL: Judul Tabel | Sumber]]
@@ -835,7 +904,7 @@ Kutipan seperti `(Santoso, 2021)` atau `Santoso dan Putri (2021)`, termasuk di k
     c2.button("Hapus bab terakhir", on_click=cb_hapus_bab)
 
 # ---------------------------------------------------------------------------
-with tab_gbr:
+def tampil_gambar():
     st.subheader("Logo UGM untuk sampul")
     st.caption("Gunakan file logo resmi (PNG/JPG). Ukurannya di sampul diatur otomatis menjadi 5,5 × 5,71 cm.")
     logo = st.file_uploader("Logo", type=["png", "jpg", "jpeg"], key="upload_logo")
@@ -860,10 +929,9 @@ with tab_gbr:
         st.caption(f"{len(set(tersimpan))} gambar dari draft atau pekerjaan tersimpan sudah otomatis dipakai: "
                    + ", ".join(sorted(set(tersimpan))))
 
-nama_gambar = sorted(set(kumpulkan_gambar()))
-
 # ---------------------------------------------------------------------------
-with tab_akhir:
+def tampil_pustaka():
+    nama_gambar = sorted(set(kumpulkan_gambar()))
     st.subheader("Daftar pustaka")
     st.text_area("Daftar pustaka", key="daftar_pustaka", height=260, label_visibility="collapsed",
                  placeholder="Tempel dari Mendeley/Zotero, satu referensi per baris.")
@@ -976,7 +1044,8 @@ with tab_akhir:
     c2.button("Hapus lampiran terakhir", on_click=cb_hapus_lampiran)
 
 # ---------------------------------------------------------------------------
-with tab_fmt:
+def tampil_format():
+    global margin, margin_beda   # dipakai juga oleh Preview dan Buat file
     kol_isian, kol_diagram = st.columns([5, 4], gap="large")
     with kol_isian:
         st.subheader("Margin halaman")
@@ -1008,7 +1077,7 @@ with tab_fmt:
                                       jarak_footer_cm(fmt_kini)), unsafe_allow_html=True)
 
 # ---------------------------------------------------------------------------
-with tab_prev:
+def tampil_preview():
     data_prev = kumpulkan_data()
     gambar_prev = kumpulkan_gambar()
     struktur, cek = kerangka(data_prev, gambar_prev)
@@ -1037,10 +1106,90 @@ with tab_prev:
             components.html(html_prev, height=1100, scrolling=True)
 
 # ---------------------------------------------------------------------------
-with tab_gen:
+def tampil_periksa_tulisan():
+    st.subheader("Periksa tulisan")
+    data = kumpulkan_data()
+    temuan = ptl.cari_tidak_baku(data, ss["abaikan_kata"])
+    ejaan = ptl.periksa_ejaan(data, ss["abaikan_kata"])
+    typo, asing = ejaan["typo"], ejaan["asing"]
+    if temuan or typo or asing:
+        st.markdown(f"**{len(temuan)} kata tidak baku**, **{len(typo)} kemungkinan typo**, dan "
+                    f"**{len(asing)} istilah asing belum miring**.")
+    else:
+        st.success("Tidak ada kata tidak baku, kemungkinan typo, atau istilah asing belum miring yang ditemukan.")
+    st.caption("Yang diperiksa: judul, kata pengantar, intisari, dan isi bab. Kutipan langsung, kutipan (Nama, tahun), "
+               "teks miring, abstract, dan daftar pustaka tidak diperiksa. Pemeriksaan berjalan di aplikasi ini saja, "
+               "tanpa AI dan tanpa mengirim tulisanmu ke mana pun.")
+
+    st.subheader(f"Kata tidak baku ({len(temuan)})")
+    st.caption("Kata di daftar kata tidak baku aplikasi ini (disusun mengikuti KBBI), termasuk bentuk berimbuhannya.")
+    for t in temuan:
+        with st.container(border=True):
+            k1, k2, k3 = st.columns([4, 1.2, 1])
+            with k1:
+                st.markdown(f"**{t['kata']}** sebaiknya **{t['saran']}**, {t['jumlah']} kali")
+                baris_lokasi(t)
+            k2.button("Ganti semua", key=f"ganti_{t['kata']}", on_click=cb_ganti_kata, args=(t["kata"], t["saran"]),
+                      use_container_width=True)
+            k3.button("Abaikan", key=f"abaikan_{t['kata']}", on_click=cb_abaikan_kata, args=(t["kata"],),
+                      use_container_width=True)
+
+    st.subheader(f"Kemungkinan typo ({len(typo)})")
+    st.caption("Kata yang tidak ada di kamus bahasa Indonesia. Ini kemungkinan, bukan kepastian: nama, istilah teknis, "
+               "dan kata baru bisa ikut tertangkap. Abaikan yang memang benar.")
+    n_tampil = ss.get("_typo_tampil", TYPO_PER_HALAMAN)
+    for t in typo[:n_tampil]:
+        with st.container(border=True):
+            k1, k2 = st.columns([4, 1])
+            with k1:
+                st.markdown(f"**{t['kata']}**, {t['jumlah']} kali")
+                baris_lokasi(t)
+                saran = ptl.saran_ejaan(t["kata"])
+                if saran:
+                    kolom = st.columns(len(saran) + 1)
+                    kolom[0].caption("Ganti dengan:")
+                    for kol, s_ejaan in zip(kolom[1:], saran):
+                        kol.button(s_ejaan, key=f"typo_{t['kata']}_{s_ejaan}", on_click=cb_ganti_kata,
+                                   args=(t["kata"], s_ejaan), use_container_width=True)
+                else:
+                    st.caption("Tidak ada saran ejaan. Betulkan langsung di isi bab, atau abaikan.")
+            k2.button("Abaikan", key=f"abaikan_{t['kata']}", on_click=cb_abaikan_kata, args=(t["kata"],),
+                      use_container_width=True)
+    if len(typo) > n_tampil:
+        st.button(f"Tampilkan {min(TYPO_PER_HALAMAN, len(typo) - n_tampil)} berikutnya", on_click=cb_lebih_banyak_typo)
+
+    st.subheader(f"Istilah asing belum miring ({len(asing)})")
+    st.caption("Kata yang ada di kamus bahasa Inggris tetapi tidak di kamus bahasa Indonesia. Panduan meminta istilah "
+               "asing ditulis miring.")
+    for t in asing:
+        with st.container(border=True):
+            k1, k2, k3 = st.columns([4, 1.2, 1])
+            with k1:
+                st.markdown(f"**{t['kata']}**, {t['jumlah']} kali")
+                baris_lokasi(t)
+            k2.button("Jadikan miring", key=f"miring_{t['kata']}", on_click=cb_miringkan_kata, args=(t["kata"],),
+                      use_container_width=True)
+            k3.button("Abaikan", key=f"abaikan_{t['kata']}", on_click=cb_abaikan_kata, args=(t["kata"],),
+                      use_container_width=True)
+
+    if ss["abaikan_kata"]:
+        st.subheader("Kata yang diabaikan")
+        st.caption("Kata ini tidak ditandai lagi. Daftarnya ikut tersimpan di simpan otomatis dan file progres.")
+        for kata in ss["abaikan_kata"]:
+            k1, k2, _ = st.columns([2, 1.2, 3])
+            k1.markdown(kata)
+            k2.button("Kembalikan", key=f"kembalikan_{kata}", on_click=cb_kembalikan_kata, args=(kata,),
+                      use_container_width=True)
+
+
+def tampil_buat_file():
     st.subheader("Buat file Word")
     st.caption(f"Dibuat dengan margin {tp.ringkas_margin(margin)}"
                + (" (disesuaikan dari panduan)." if margin_beda else " (sesuai panduan)."))
+    _, kalimat_tulisan = ptl.ringkasan(kumpulkan_data(), ss["abaikan_kata"])
+    if kalimat_tulisan:
+        st.info(kalimat_tulisan.replace("Lihat tab Periksa tulisan.", "Lihat tab Periksa tulisan di tahap 3.")
+                + " Kamu tetap bisa membuat filenya sekarang.")
     if st.button("Buat file Word", type="primary"):
         data = kumpulkan_data()
         gambar = kumpulkan_gambar()
@@ -1082,6 +1231,43 @@ with tab_gen:
 1. Klik **Yes** saat Word bertanya mau memperbarui *fields*, atau tekan **Ctrl + A** lalu **F9** (di Mac: **Cmd + A** lalu **Fn + F9**).
 2. Daftar isi, daftar tabel, daftar gambar, dan daftar lampiran terisi lengkap dengan nomor halaman.
 """)
+
+
+# ---------------------------------------------------------------------------
+# Navigasi: empat tahap, dan hanya tab milik tahap aktif yang dijalankan
+# ---------------------------------------------------------------------------
+TAHAP = {"isi": "1. Isi laporan", "bahan": "2. Bahan pendukung", "periksa": "3. Periksa", "buat": "4. Buat file"}
+TAB_TAHAP = {
+    "isi": [("Draft", tampil_draft), ("Identitas", tampil_identitas), ("Bagian awal", tampil_awal),
+            ("Bab", tampil_bab)],
+    "bahan": [("Pustaka & lampiran", tampil_pustaka), ("Gambar & logo", tampil_gambar)],
+    "periksa": [("Format halaman", tampil_format), ("Preview", tampil_preview),
+                ("Periksa tulisan", tampil_periksa_tulisan)],
+}
+
+
+# Nilai bawaan hanya diberikan selagi "tahap" belum ada di session_state. Kalau "tahap" pernah diisi lewat kode,
+# memberi default lagi membuat Streamlit menulis peringatan di log.
+opsi_tahap = {} if "tahap" in ss else {"default": "isi"}
+try:   # Streamlit baru: tahap tersimpan di alamat (?tahap=...), jadi tetap terpilih saat halaman dimuat ulang
+    tahap = st.segmented_control("Tahap pengerjaan", list(TAHAP), format_func=TAHAP.get, key="tahap",
+                                 required=True, bind="query-params", label_visibility="collapsed", **opsi_tahap)
+except TypeError:
+    tahap = st.segmented_control("Tahap pengerjaan", list(TAHAP), format_func=TAHAP.get, key="tahap",
+                                 label_visibility="collapsed", **opsi_tahap)
+tahap = tahap or "isi"
+
+if tahap in TAB_TAHAP:
+    nama_tab = [nama for nama, _ in TAB_TAHAP[tahap]]
+    try:   # Streamlit baru: ingat tab yang sedang dibuka saat halaman dimuat ulang
+        wadah_tab = st.tabs(nama_tab, key=f"tab_{tahap}")
+    except TypeError:
+        wadah_tab = st.tabs(nama_tab)
+    for wadah, (_, tampil) in zip(wadah_tab, TAB_TAHAP[tahap]):
+        with wadah:
+            tampil()
+else:
+    tampil_buat_file()
 
 # ---------------------------------------------------------------------------
 # Autosave: dijalankan di akhir setiap interaksi, hanya bila ada perubahan

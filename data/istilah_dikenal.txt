@@ -1,0 +1,24 @@
+# Istilah yang sah di skripsi ekonomi dan bisnis tetapi tidak ada di kamus Hunspell id_ID.
+# Satu kata per baris, huruf kecil. Kata di sini tidak ditandai sebagai kemungkinan typo.
+normalitas
+linearitas
+heteroskedastisitas
+homoskedastisitas
+multikolinearitas
+multikolinieritas
+autokorelasi
+stasioneritas
+kointegrasi
+ekonometrika
+endogenitas
+kategorikal
+parametrik
+nonparametrik
+kolektibilitas
+skalabilitas
+sekuritisasi
+tekfin
+kewirausahaan
+wirausahawan
+purposif
+lokapasar

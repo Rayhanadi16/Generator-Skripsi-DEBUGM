@@ -90,8 +90,8 @@ def test_file_kosong():
 
 def test_impor_lewat_aplikasi(aplikasi):
     """Uploader tidak bisa diisi lewat AppTest, jadi hasil baca ditaruh langsung di session_state."""
-    from conftest import tombol
-    at = aplikasi
+    from conftest import ke_tahap, tombol
+    at = ke_tahap(aplikasi, "bahan")
     daftar, peringatan = ip.baca_berkas("contoh.bib", (DATA / "contoh.bib").read_bytes())
     at.session_state["_impor_ref"], at.session_state["_impor_peringatan"] = daftar, peringatan
     at.session_state["_impor_nonce"] = 1

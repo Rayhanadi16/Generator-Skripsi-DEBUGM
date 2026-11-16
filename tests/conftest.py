@@ -30,3 +30,9 @@ def aplikasi(monkeypatch):
 
 def tombol(at, label):
     return next(b for b in at.button if b.label == label)
+
+
+def ke_tahap(at, kunci):
+    """Pindah tahap ("isi", "bahan", "periksa", "buat") seperti mengklik tombol tahapnya."""
+    at.session_state["tahap"] = kunci
+    return at.run()

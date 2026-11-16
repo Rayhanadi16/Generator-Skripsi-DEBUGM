@@ -11,6 +11,7 @@ import base64
 import html
 import re
 
+import periksa_tulisan
 import rujukan
 import sitasi
 from generator import (FORMAT_DEB_SV_UGM, RE_GAMBAR, RE_LIST1, RE_LIST2, RE_LIST3, RE_RUMUS, RE_TABEL_BUKA,
@@ -132,6 +133,9 @@ def kerangka(data, gambar=None):
         if not (data.get("identitas", {}).get(k) or "").strip():
             peringatan.append(f"{nama} di tab Identitas belum diisi.")
     peringatan += sitasi.kalimat_cek(sitasi.periksa(data))
+    _, kalimat_tulisan = periksa_tulisan.ringkasan(data, data.get("abaikan_kata") or ())
+    if kalimat_tulisan:
+        peringatan.append(kalimat_tulisan)
     return hasil, peringatan
 
 

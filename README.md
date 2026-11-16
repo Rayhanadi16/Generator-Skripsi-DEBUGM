@@ -31,6 +31,10 @@ Kamu cukup mengisi identitas, isi bab, pustaka, dan gambar. Format diatur otomat
 | `tabel_impor.py` | Pembaca tabel dari Excel (.xlsx) atau CSV |
 | `rujukan.py` | Rujukan silang: label pada gambar, tabel, dan rumus, serta penanda `[[REF]]` |
 | `ekspor_pdf.py` | PDF pratinjau lewat LibreOffice |
+| `periksa_tulisan.py` | Periksa tulisan: kata tidak baku, kemungkinan typo, dan istilah asing belum miring |
+| `data/kata_tidak_baku.csv` | Daftar kata tidak baku yang dipakai Periksa tulisan |
+| `data/istilah_dikenal.txt` | Istilah teknis yang sah tetapi tidak ada di kamus, supaya tidak ditandai typo |
+| `kamus/` | Kamus Hunspell bahasa Indonesia dan Inggris beserta lisensinya |
 | `packages.txt` | Paket sistem untuk Streamlit Community Cloud (LibreOffice dan huruf pengganti) |
 | `contoh_data.json` | Data contoh untuk mencoba |
 | `grafik_contoh.png` | Gambar contoh untuk data contoh |
@@ -92,10 +96,20 @@ streamlit run app.py
 
 ## Cara pakai singkat
 
+Menu di bagian atas dibagi menjadi empat tahap. Di bawahnya hanya tampil tab milik tahap yang sedang dipilih.
+
+| Tahap | Tab di dalamnya |
+|---|---|
+| **1. Isi laporan** | Draft, Identitas, Bagian awal, Bab |
+| **2. Bahan pendukung** | Pustaka & lampiran, Gambar & logo |
+| **3. Periksa** | Format halaman, Preview, Periksa tulisan |
+| **4. Buat file** | Buat file Word dan PDF pratinjau |
+
 1. Klik **"Isi dengan data contoh"** di sidebar untuk melihat contohnya.
-2. Isi tab **Identitas** sampai **Gambar & logo**: identitas, bagian awal, bab, pustaka & lampiran, lalu upload gambar & logo.
-3. Bila perlu, sesuaikan margin di tab **Format halaman**.
-4. Cek hasilnya di tab **Preview**, lalu di tab **Buat file Word** klik **Buat file Word** dan unduh file .docx.
+2. Di tahap **1. Isi laporan**, isi identitas, bagian awal, dan bab.
+3. Di tahap **2. Bahan pendukung**, isi pustaka dan lampiran, lalu upload gambar dan logo.
+4. Di tahap **3. Periksa**, sesuaikan margin bila perlu dan cek hasilnya di tab **Preview**. Lalu di tahap
+   **4. Buat file**, klik **Buat file Word** dan unduh file .docx.
 5. Buka di **Microsoft Word**. Klik **Yes** saat diminta memperbarui *fields*
    (atau Cmd + A lalu Fn + F9). Daftar isi, tabel, gambar, dan lampiran akan terisi dengan nomor halaman.
 6. Isian **tersimpan otomatis** setiap ada perubahan. Saat aplikasi dibuka lagi, klik **Lanjutkan**
@@ -193,6 +207,60 @@ Hasilnya tampil di daftar hal yang perlu diperhatikan di tab **Preview** dan di 
 lembaga dicocokkan dengan huruf awal namanya, jadi `(BPS, 2023)` cocok dengan entri "Badan Pusat Statistik. (2023)".
 Kodenya ada di `sitasi.py`.
 
+## Periksa tulisan (tahap 3)
+
+Tab **Periksa tulisan** punya tiga bagian: kata tidak baku, kemungkinan typo, dan istilah asing belum miring.
+Bagian pertama mencari kata tidak baku yang sering muncul di skripsi, lalu menawarkan bentuk bakunya.
+
+- Setiap temuan menampilkan katanya, bentuk bakunya, jumlah kemunculan, lokasi pertama, dan cuplikan kalimatnya.
+- **Ganti semua** mengganti kata itu di seluruh laporan, dengan huruf kapital yang mengikuti aslinya
+  (Analisa menjadi Analisis). **Abaikan** berarti kata itu tidak ditandai lagi; daftarnya ikut tersimpan di simpan
+  otomatis dan file progres, dan bisa dikembalikan.
+- Bentuk berimbuhan ikut dikenali: `dianalisa` menjadi `dianalisis`, `resikonya` menjadi `risikonya`.
+- Yang diperiksa: judul, kata pengantar, intisari, judul bab dan subbab, serta isi subbab. Yang tidak diperiksa:
+  abstract, daftar pustaka, kutipan langsung dalam tanda petik, kutipan (Nama, tahun), teks miring, dan isi penanda.
+
+Daftar katanya ada di `data/kata_tidak_baku.csv` dengan tiga kolom: `tidak_baku`, `baku`, dan `catatan`.
+
+| Isi kolom catatan | Artinya |
+|---|---|
+| kosong | Dicocokkan sebagai kata dasar dan bentuk berimbuhannya. |
+| `utuh` | Hanya dicocokkan sebagai kata utuh. Dipakai untuk bentuk yang sudah berimbuhan (`merubah`) dan kata yang awalannya menipu (`nampak`, karena `menampakkan` adalah bentuk baku dari `tampak`). |
+| `ragu: ...` | **Belum dipakai.** Baris ini menunggu dicek. Hapus tulisan `ragu` beserta alasannya untuk mengaktifkannya. |
+
+Kata yang juga baku dalam arti lain tidak dimasukkan sebagai kata dasar. Contohnya `rubah` (hewan): yang terdaftar
+hanya `merubah` dan `dirubah`. Daftar ini disusun dengan bantuan AI mengikuti KBBI dan EYD edisi V, jadi sebaiknya
+dibaca ulang sebelum diandalkan. Aplikasinya sendiri tidak memakai AI dan tidak mengirim isi laporan ke mana pun.
+
+### Kemungkinan typo dan istilah asing
+
+- **Kemungkinan typo** adalah kata yang tidak ada di kamus bahasa Indonesia. Setiap temuan diberi paling banyak tiga
+  saran ejaan yang bisa langsung dipilih. Ini kemungkinan, bukan kepastian: nama, istilah teknis, dan kata baru bisa
+  ikut tertangkap, dan bisa diabaikan.
+- **Istilah asing belum miring** adalah kata yang ada di kamus bahasa Inggris tetapi tidak di kamus bahasa Indonesia,
+  dan belum ditulis miring. **Jadikan miring** membungkus semua kemunculannya dengan `*...*`.
+
+Supaya daftarnya tidak penuh temuan palsu, yang berikut ini dilewati, selain semua yang sudah dilewati di bagian kata
+tidak baku: kata berhuruf kapital di tengah kalimat (nama diri), singkatan berhuruf kapital semua (BPS, OJK, ROA),
+kata yang menempel pada angka, alamat web dan email, nama penulis yang mendahului tahun seperti Sugiyono (2019), kata
+di daftar istilah, nama di tab Identitas, dan semua kata di daftar pustaka. Kata ulang diperiksa per bagiannya.
+
+Istilah teknis yang sah tetapi tidak ada di kamus (misalnya heteroskedastisitas) didaftarkan di
+`data/istilah_dikenal.txt`, satu kata per baris. Tambahkan ke sana bila ada istilah bidangmu yang terus ditandai.
+
+Yang belum ditangani: kesalahan yang ejaannya benar tetapi pemakaiannya keliru, seperti `di` yang seharusnya dipisah
+atau disambung, dan typo yang kebetulan menjadi kata lain yang sah.
+
+### Sumber dan lisensi kamus
+
+| Kamus | Sumber | Lisensi | File lisensi |
+|---|---|---|---|
+| `kamus/id_ID.dic`, `kamus/id_ID.aff` | Kamus Hunspell bahasa Indonesia karya Benitius Brevoort dan hunspell-id Authors, dari repo [LibreOffice dictionaries](https://github.com/LibreOffice/dictionaries), folder `id` | LGPL-3.0-only (tertulis di kepala `id_ID.aff`) | `kamus/LICENSE-dict-id_ID.txt` |
+| `kamus/en_US.dic`, `kamus/en_US.aff` | Kamus Hunspell en_US turunan SCOWL, dari repo yang sama, folder `en` | Lisensi SCOWL dan turunannya | `kamus/README_en_US.txt`, `kamus/license-en.txt` |
+
+File kamus disertakan apa adanya, tanpa diubah. Kamus dibaca dengan [spylls](https://github.com/zverok/spylls),
+pustaka Python murni, sehingga tidak perlu memasang program apa pun di server.
+
 ## Preview (tab Preview)
 
 Lihat hasilnya sebelum generate:
@@ -261,7 +329,7 @@ Yang perlu diketahui:
 Karena hasilnya teks biasa di isi subbab, tabel ini ikut tersimpan otomatis dan ikut di file progres. Kodenya ada di
 `tabel_impor.py`, memakai library `openpyxl`.
 
-## PDF pratinjau (tab Buat file Word)
+## PDF pratinjau (tahap 4, Buat file)
 
 Setelah file Word dibuat, tombol **Buat PDF pratinjau** mengubahnya menjadi PDF lewat LibreOffice, dengan daftar isi,
 daftar tabel, dan daftar gambar yang sudah terisi. Tombol ini hanya muncul bila LibreOffice ada:

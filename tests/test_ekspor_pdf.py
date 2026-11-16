@@ -15,10 +15,10 @@ def test_tanpa_libreoffice_pesannya_jelas(monkeypatch):
 
 
 def test_tombol_tidak_muncul_tanpa_libreoffice(aplikasi, monkeypatch):
-    from conftest import tombol
+    from conftest import ke_tahap, tombol
     monkeypatch.setattr(epdf, "tersedia", lambda: False)
     at = tombol(aplikasi, "Isi dengan data contoh").click().run()
-    at = tombol(at, "Buat file Word").click().run()
+    at = tombol(ke_tahap(at, "buat"), "Buat file Word").click().run()
     assert not at.exception
     assert not any(b.label == "Buat PDF pratinjau" for b in at.button)
 

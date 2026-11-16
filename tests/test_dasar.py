@@ -1,4 +1,4 @@
-from conftest import tombol
+from conftest import ke_tahap, tombol
 
 
 def test_aplikasi_terbuka_tanpa_exception(aplikasi):
@@ -10,7 +10,7 @@ def test_data_contoh_menjadi_docx(aplikasi):
     assert not at.exception
     assert at.session_state["id_judul_id"]
 
-    at = tombol(at, "Buat file Word").click().run()
+    at = tombol(ke_tahap(at, "buat"), "Buat file Word").click().run()
     assert not at.exception
     hasil = at.session_state["_hasil"]
     isi = hasil if isinstance(hasil, bytes) else hasil.getvalue()

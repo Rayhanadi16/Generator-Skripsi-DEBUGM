@@ -12,6 +12,36 @@ BULAN = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustu
 
 PEMBARUAN = [
     {
+        "versi": "1.10",
+        "tanggal": date(2026, 11, 16),
+        "judul": "Kemungkinan typo dan istilah asing",
+        "poin": [
+            "Tab Periksa tulisan sekarang juga menandai kemungkinan typo, lengkap dengan saran ejaannya.",
+            "Istilah asing yang belum ditulis miring ikut ditandai, dan bisa dimiringkan sekaligus dengan satu klik.",
+            "Semua pemeriksaan berjalan di aplikasi ini saja, tanpa AI dan tanpa mengirim tulisanmu ke mana pun.",
+        ],
+    },
+    {
+        "versi": "1.9",
+        "tanggal": date(2026, 11, 16),
+        "judul": "Periksa kata tidak baku",
+        "poin": [
+            "Tab baru Periksa tulisan di tahap 3 mencari kata tidak baku seperti analisa, resiko, dan praktek, "
+            "termasuk bentuk berimbuhannya, lalu menawarkan bentuk bakunya.",
+            "Satu klik Ganti semua mengganti kata itu di seluruh laporan. Kata yang memang kamu sengaja bisa diabaikan.",
+        ],
+    },
+    {
+        "versi": "1.8",
+        "tanggal": date(2026, 11, 16),
+        "judul": "Menu dikelompokkan menjadi 4 tahap",
+        "poin": [
+            "Sembilan tab sekarang dikelompokkan menjadi empat tahap: Isi laporan, Bahan pendukung, Periksa, "
+            "dan Buat file. Isianmu tetap ada saat berpindah tahap.",
+            "Mengetik di tab Bab terasa lebih ringan, karena hanya tahap yang sedang dibuka yang diproses.",
+        ],
+    },
+    {
         "versi": "1.7",
         "tanggal": date(2026, 11, 15),
         "judul": "PDF pratinjau",

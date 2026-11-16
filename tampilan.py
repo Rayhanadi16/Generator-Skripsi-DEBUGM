@@ -72,6 +72,10 @@ header[data-testid="stHeader"] { background:transparent; }
 [role="dialog"] { background:var(--kertas); color:var(--tinta); border:1px solid var(--garis); border-radius:4px; }
 [role="dialog"] p, [role="dialog"] li, [role="dialog"] summary, [role="dialog"] label { font-family:var(--ui); color:var(--tinta); }
 [role="dialog"] [data-testid="stCaptionContainer"] p { color:var(--redup); }
+/* jendela berada di luar .stApp, jadi tombol utamanya diatur sendiri supaya teksnya tidak ikut warna tinta */
+[role="dialog"] [data-testid="stBaseButton-primary"] { background:var(--stempel); border-color:var(--stempel); border-radius:3px; }
+[role="dialog"] [data-testid="stBaseButton-primary"]:hover { background:var(--stempel-tua); border-color:var(--stempel-tua); }
+[role="dialog"] [data-testid="stBaseButton-primary"] p { color:var(--di-stempel); font-weight:600; }
 [role="dialog"] button[aria-label="Close"] { color:var(--tinta); min-width:44px; min-height:44px; }
 
 /* ---------- kop ---------- */
@@ -83,6 +87,23 @@ header[data-testid="stHeader"] { background:transparent; }
 .kop-format b { color:var(--tinta); font-weight:600; }
 .kop-format .ubah { color:var(--stempel); font-weight:600; }
 @media (max-width:820px) { .kop { gap:0.9rem; } .kop h1 { font-size:1.7rem; } .kop-format { text-align:left; } }
+
+/* ---------- tahap: satu tingkat di atas tab, jadi dibuat lebih tegas daripada tab ---------- */
+.stApp [data-testid="stButtonGroup"] [role="radiogroup"] { flex-wrap:wrap; gap:0.4rem; }
+.stApp button[data-variant="segmented_control"] {
+  min-height:44px; padding:0.5rem 1rem; border:1px solid var(--tepi); border-radius:3px;
+  background:var(--kertas); color:var(--tinta); cursor:pointer; }
+.stApp button[data-variant="segmented_control"] p { font-family:var(--ui); font-size:0.95rem; font-weight:600; color:inherit; }
+/* Streamlit menyembunyikan garis kiri tombol di sebelah tombol terpilih (untuk tombol yang berdempetan).
+   Di sini tombolnya berjarak, jadi keempat sisinya harus selalu bergaris. */
+.stApp [data-testid="stButtonGroup"] button[data-variant="segmented_control"]:not([aria-checked="true"]) {
+  border-color:var(--tepi) !important; }   /* aturan Streamlit untuk sisi itu lebih spesifik, jadi perlu !important */
+.stApp [data-testid="stButtonGroup"] button[data-variant="segmented_control"]:not([aria-checked="true"]):hover {
+  border-color:var(--stempel) !important; color:var(--stempel); }
+.stApp [data-testid="stButtonGroup"] button[data-variant="segmented_control"][data-selected="true"],
+.stApp [data-testid="stButtonGroup"] button[data-variant="segmented_control"][aria-checked="true"] {
+  background:var(--stempel); border-color:var(--stempel); color:var(--di-stempel); }
+.stApp button[data-variant="segmented_control"]:focus-visible { outline:2px solid var(--stempel); outline-offset:2px; }
 
 /* ---------- tab (role=... untuk Streamlit baru, data-baseweb untuk versi lama) ---------- */
 /* sembilan tab harus terlihat semua: di layar sempit turun ke baris kedua, bukan digulir ke samping */
