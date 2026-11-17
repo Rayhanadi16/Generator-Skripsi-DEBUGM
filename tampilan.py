@@ -60,23 +60,27 @@ header[data-testid="stHeader"] { background:transparent; }
   [data-testid="stMainBlockContainer"] { padding:3.5rem 1rem 2rem; margin:0.5rem auto 1.5rem; border-radius:0; }
 }
 
-/* tombol tema: ikon saja di pojok kanan atas lembar; labelnya tetap ada untuk pembaca layar */
+/* pojok kanan atas lembar: tombol Cara Pakai, lalu tombol tema (ikon saja; labelnya tetap ada untuk pembaca layar) */
 [data-testid="stMainBlockContainer"] { position:relative; }
-.st-key-tombol_tema { position:absolute; top:0.8rem; right:1rem; width:auto; z-index:5; }
-.stApp .st-key-tombol_tema button { width:44px; height:44px; min-height:44px; padding:0; }
-.st-key-tombol_tema button [data-testid="stIconMaterial"] { font-size:1.4rem; margin:0; }
-.st-key-tombol_tema button [data-testid="stMarkdownContainer"] {
+.st-key-tombol_tema { position:absolute; top:0.8rem; right:1rem; width:auto; z-index:5;
+  flex-wrap:nowrap; justify-content:flex-end; align-items:center; gap:8px; }
+.st-key-tombol_tema > div { width:auto; flex:0 0 auto; }
+.stApp .st-key-ganti_tema button { width:44px; height:44px; min-height:44px; padding:0; }
+.st-key-tombol_tema :is(button, a) [data-testid="stIconMaterial"] { font-size:1.4rem; margin:0; }
+.st-key-ganti_tema button [data-testid="stMarkdownContainer"] {
   position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%); white-space:nowrap; }
-
-/* ---------- jendela (st.dialog) ---------- */
-[role="dialog"] { background:var(--kertas); color:var(--tinta); border:1px solid var(--garis); border-radius:4px; }
-[role="dialog"] p, [role="dialog"] li, [role="dialog"] summary, [role="dialog"] label { font-family:var(--ui); color:var(--tinta); }
-[role="dialog"] [data-testid="stCaptionContainer"] p { color:var(--redup); }
-/* jendela berada di luar .stApp, jadi tombol utamanya diatur sendiri supaya teksnya tidak ikut warna tinta */
-[role="dialog"] [data-testid="stBaseButton-primary"] { background:var(--stempel); border-color:var(--stempel); border-radius:3px; }
-[role="dialog"] [data-testid="stBaseButton-primary"]:hover { background:var(--stempel-tua); border-color:var(--stempel-tua); }
-[role="dialog"] [data-testid="stBaseButton-primary"] p { color:var(--di-stempel); font-weight:600; }
-[role="dialog"] button[aria-label="Close"] { color:var(--tinta); min-width:44px; min-height:44px; }
+.stApp .st-key-tombol_tema [data-testid="stLinkButton"] a {
+  height:44px; min-height:44px; padding:0 0.9rem; gap:0.4rem; white-space:nowrap; text-decoration:none;
+  background:var(--kertas); color:var(--tinta); border:1px solid var(--tepi); border-radius:3px; }
+.stApp .st-key-tombol_tema [data-testid="stLinkButton"] a p { color:inherit; font-size:0.9rem; font-weight:600; }
+.stApp .st-key-tombol_tema [data-testid="stLinkButton"] a:hover { border-color:var(--stempel); color:var(--stempel); }
+.stApp .st-key-tombol_tema [data-testid="stLinkButton"] a:focus-visible { outline:2px solid var(--stempel); outline-offset:2px; }
+@media (max-width:640px) {
+  /* layar sempit: ikon buku saja, supaya tidak menimpa judul */
+  .stApp .st-key-tombol_tema [data-testid="stLinkButton"] a { width:44px; padding:0; }
+  .st-key-tombol_tema [data-testid="stLinkButton"] a [data-testid="stMarkdownContainer"] {
+    position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%); white-space:nowrap; }
+}
 
 /* ---------- kop ---------- */
 .kop { display:flex; align-items:flex-end; justify-content:space-between; gap:2rem; flex-wrap:wrap;

@@ -12,6 +12,14 @@ BULAN = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustu
 
 PEMBARUAN = [
     {
+        "versi": "1.12",
+        "tanggal": date(2026, 11, 17),
+        "judul": "Buku panduan Cara Pakai",
+        "poin": [
+            "Tombol Cara Pakai di pojok kanan atas membuka buku panduan penggunaan (PDF).",
+        ],
+    },
+    {
         "versi": "1.11",
         "tanggal": date(2026, 11, 17),
         "judul": "Gambar, sub-subbab, dan kerangka",

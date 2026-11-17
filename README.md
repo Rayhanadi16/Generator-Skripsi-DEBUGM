@@ -97,6 +97,8 @@ streamlit run app.py
 
 ## Cara pakai singkat
 
+Buku panduan lengkap (PDF): [Cara Pakai](https://drive.google.com/file/d/1vsR16_N3ub67RuuH1B5p0CgC4WRKdONF/view?usp=sharing). Di aplikasi, panduan yang sama dibuka lewat tombol **Cara Pakai** di pojok kanan atas.
+
 Menu di bagian atas dibagi menjadi empat tahap. Di bawahnya hanya tampil tab milik tahap yang sedang dipilih.
 
 | Tahap | Tab di dalamnya |

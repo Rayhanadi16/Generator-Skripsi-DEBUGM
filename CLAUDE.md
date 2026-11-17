@@ -15,7 +15,7 @@ Aplikasi Streamlit yang menyusun laporan TA menjadi file Word (.docx) sesuai Pan
 | `tampilan.py` | CSS (mode terang dan gelap) dan potongan HTML kecil. |
 | `simpan_browser.py` | Simpan otomatis mode web lewat IndexedDB di browser pengunjung. |
 | `autosave.py` | Simpan otomatis dan riwayat versi mode lokal (folder `autosave/`). |
-| `pengaturan.py` | `MODE_WEB`, dari variabel lingkungan `GENERATOR_MODE`. |
+| `pengaturan.py` | `MODE_WEB`, dari variabel lingkungan `GENERATOR_MODE`, dan `LINK_PANDUAN` (buku panduan untuk tombol Cara Pakai; kosong berarti tombolnya disembunyikan). |
 
 Alur data: `kumpulkan_data()` di `app.py` mengubah isian menjadi satu dict, yang dibaca `generator.buat_dokumen()` dan `preview.kerangka()`. `muat_data()` adalah kebalikannya.
 

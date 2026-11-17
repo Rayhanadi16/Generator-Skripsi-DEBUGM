@@ -26,7 +26,7 @@ import ekspor_pdf as epdf
 import periksa_tulisan as ptl
 import susun_isi as si
 import tampilan as tp
-from pengaturan import MODE_WEB
+from pengaturan import LINK_PANDUAN, MODE_WEB
 
 if MODE_WEB:
     class _TanpaAutosave:
@@ -149,6 +149,8 @@ def _isi_yang_baru():
             for e in lama:
                 st.markdown(f"**Versi {e['versi']}, {pb.tanggal_teks(e['tanggal'])}: {e['judul']}**\n"
                             + "\n".join(f"- {p}" for p in e["poin"]))
+    if LINK_PANDUAN:
+        st.markdown(f"Baca buku panduan: [Cara Pakai]({LINK_PANDUAN})")
     if st.button("Oke, mulai", type="primary", key="tutup_yang_baru"):
         ss["_yang_baru"] = "tutup"
         st.rerun()
@@ -1125,7 +1127,10 @@ with st.sidebar:
     st.button(f"Yang baru (versi {pb.VERSI})", on_click=cb_buka_yang_baru, width="stretch")
     st.markdown(f'<div class="catatan-sisi">Dibuat oleh <b>{tp.PEMBUAT}</b></div>', unsafe_allow_html=True)
 
-with st.container(key="tombol_tema"):   # ditaruh di pojok kanan atas lembar lewat CSS (.st-key-tombol_tema)
+# ditaruh di pojok kanan atas lembar lewat CSS (.st-key-tombol_tema): Cara Pakai di kiri, tombol tema di kanan
+with st.container(key="tombol_tema", horizontal=True, horizontal_alignment="right", vertical_alignment="center"):
+    if LINK_PANDUAN:
+        st.link_button("Cara Pakai", LINK_PANDUAN, icon=":material/menu_book:")
     gelap = ss.get("mode_gelap", False)
     st.button("Ganti ke mode terang" if gelap else "Ganti ke mode gelap", key="ganti_tema",
               icon=":material/dark_mode:" if gelap else ":material/light_mode:", on_click=cb_ganti_tema)
