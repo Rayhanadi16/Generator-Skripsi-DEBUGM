@@ -11,6 +11,7 @@ Aplikasi Streamlit yang menyusun laporan TA menjadi file Word (.docx) sesuai Pan
 | `preview.py` | `kerangka()` untuk ringkasan dan daftar cek, `halaman_html()` untuk tiruan lembar A4. |
 | `importer.py` | Membaca draft .docx mentah dan menebak tujuan tiap paragraf. |
 | `pustaka.py` | Mencari DOI di PDF, mengambil data Crossref, menyusun entri APA 7. |
+| `susun_isi.py` | Fungsi murni untuk mengolah isi subbab sebagai blok: sisip, pindah, ubah, hapus penanda. |
 | `tampilan.py` | CSS (mode terang dan gelap) dan potongan HTML kecil. |
 | `simpan_browser.py` | Simpan otomatis mode web lewat IndexedDB di browser pengunjung. |
 | `autosave.py` | Simpan otomatis dan riwayat versi mode lokal (folder `autosave/`). |
@@ -59,9 +60,21 @@ pytest
 
 Logika diuji dengan pytest biasa. Antarmuka diuji tanpa browser memakai `streamlit.testing.v1.AppTest` (lihat `tests/test_dasar.py`).
 
-## Setiap fitur baru
+## Setiap update
 
-Wajib menambah satu entri di paling atas `PEMBARUAN` dalam `pembaruan.py` (versi dinaikkan, `VERSI` ikut otomatis), dengan poin dalam bahasa pengunjung. Tambahkan juga baris file barunya ke tabel di README.md.
+Satu update = satu versi. Fitur-fitur dalam satu update ditulis sebagai poin dalam satu entri di paling atas `PEMBARUAN` dalam `pembaruan.py` (`VERSI` ikut otomatis), dengan bahasa pengunjung. Bagian update berikutnya menambah poin ke entri yang sama, bukan membuat versi baru. Tambahkan juga baris file barunya ke tabel di README.md.
+
+## Susunan isi lewat tombol
+
+Teks isi subbab tetap sumber utama. Tombol di bawah kotak isi (Tambah gambar dan seterusnya) hanya menulis atau memindah baris penanda lewat `susun_isi.py`, jadi generator, preview, rujukan silang, dan simpan otomatis tidak perlu tahu. `pecah_blok()` memakai pola yang sama dengan `generator._isi_subbab()`; jangan membuat aturan urai baru di sana.
+
+Panel di bawah subbab hanya satu yang terbuka: `ss["_panel"]` (`jenis`, `i`, `j`, `blok`) dengan nonce `ss["_pn"]` di kunci widgetnya (`pn_*`), supaya isian panel kosong lagi setiap dibuka. Gambar dari panel disimpan ke `ss["_gambar_simpan"]` lewat `simpan_gambar()`, yang memberi nama baru bila nama file sudah dipakai gambar lain.
+
+Atur susunan (`susunan_subbab()`) menampilkan blok dari `pecah_blok()` untuk satu subbab, yang dicatat di `ss["_susun"]`. Aksinya merujuk blok lewat indeksnya, jadi setiap callback mengecek dulu dengan `blok_subbab()` bahwa blok itu masih berjenis sama. Hapus memakai konfirmasi klik kedua lewat `ss["_yakin"]`, dan tidak pernah menghapus file dari `_gambar_simpan`.
+
+Panel Kerangka laporan (`kerangka_laporan()`) mengubah judul aslinya, bukan teks daftar isi. Subbab dipindah, disisipkan, dan dihapus lewat `tukar_subbab()`, `sisip_subbab()`, dan `hapus_subbab()` (pembungkus fungsi bernama sama di `susun_isi.py`, yang bekerja pada mapping apa pun supaya bisa diuji dengan dict). Ketiganya menggeser semua kunci di `susun_isi.BAGIAN_SUBBAB`; bila subbab mendapat isian baru per subbab, daftarkan di sana. Setelah indeks subbab berubah, panggil `tutup_semua_panel()`. Di Kerangka, Naik/Turun sub-subbab memakai `pindah_bagian()` (judul beserta isinya), sedangkan di Atur susunan memakai `pindah_blok()` (baris judul saja).
+
+`generator.judul_kapital()` membiarkan kata yang punya huruf kapital setelah huruf pertama (ROA, e-Commerce). `tests/test_kerangka.py` menjaga aturan itu.
 
 ## Penanda dan rujukan silang
 

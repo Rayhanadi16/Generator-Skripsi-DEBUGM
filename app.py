@@ -10,8 +10,8 @@ from datetime import date
 
 import streamlit as st
 
-from generator import (FORMAT_DEB_SV_UGM, MARGIN_MAX_CM, MARGIN_MIN_CM, SISI_MARGIN, STRUKTUR_BAB_BAWAAN, buat_dokumen,
-                       format_dari, hitung_kata, jarak_footer_cm, margin_bawaan, urutkan_kata_kunci)
+from generator import (FORMAT_DEB_SV_UGM, ROMAWI, MARGIN_MAX_CM, MARGIN_MIN_CM, SISI_MARGIN, STRUKTUR_BAB_BAWAAN, buat_dokumen,
+                       format_dari, hitung_kata, jarak_footer_cm, judul_kapital, margin_bawaan, urutkan_kata_kunci)
 from importer import daftar_tujuan, lacak_draft, susun_data, warna
 from preview import halaman_html, kerangka
 import autosave as asv
@@ -24,6 +24,7 @@ import impor_pustaka as ipt
 import tabel_impor as tbi
 import ekspor_pdf as epdf
 import periksa_tulisan as ptl
+import susun_isi as si
 import tampilan as tp
 from pengaturan import MODE_WEB
 
@@ -213,6 +214,7 @@ def muat_data(data):
             ss[f"bab{i}_s{j}_judul"] = s.get("judul", "")
             ss[f"bab{i}_s{j}_isi"] = s.get("isi", "")
     ss["abaikan_kata"] = list(data.get("abaikan_kata") or [])   # file progres lama belum punya kunci ini
+    ss["_panel"] = ss["_susun"] = ss["_yakin"] = None            # panel lama menunjuk subbab dari isian sebelumnya
     lamps = data.get("lampiran", [])
     ss["jml_lampiran"] = len(lamps)
     for k, l in enumerate(lamps):
@@ -387,16 +389,493 @@ def cb_sisipkan_tabel():
     ss["_pesan"] = ("success", f"Tabel disisipkan di akhir subbab {i + 1}.{j + 1}. Nomornya dihitung otomatis.")
 
 
+# ----- panel kecil di bawah subbab (tambah gambar, atur susunan); hanya satu yang terbuka -----
+def tutup_panel():
+    ss["_panel"] = None
+    ss["_yakin"] = None
+
+
+def panel_terbuka(jenis, i, j, blok=None):
+    return ss.get("_panel") == {"jenis": jenis, "i": i, "j": j, "blok": blok}
+
+
+def cb_panel(jenis, i, j, blok=None):
+    """Buka panel, atau tutup bila panel yang sama sedang terbuka. Nonce baru mengosongkan isian panelnya."""
+    if panel_terbuka(jenis, i, j, blok):
+        tutup_panel()
+        return
+    ss["_panel"] = {"jenis": jenis, "i": i, "j": j, "blok": blok}
+    ss["_pn"] = ss.get("_pn", 0) + 1
+    ss["_yakin"] = None
+
+
+def simpan_gambar(berkas):
+    """Simpan gambar yang diunggah dari panel subbab, dengan nama yang tidak menimpa gambar lain."""
+    isi = berkas.getvalue()
+    simpanan = dict(ss.get("_gambar_simpan", {}))
+    nama = si.nama_bebas(berkas.name, isi, {**ss.get("_gambar_draft", {}), **simpanan})
+    simpanan[nama] = isi
+    ss["_gambar_simpan"] = simpanan
+    return nama
+
+
+def berkas_ditolak(berkas):
+    batas = st.get_option("server.maxUploadSize")
+    if berkas.size > batas * 1024 * 1024:
+        ss["_pesan"] = ("error", f"Ukuran file melebihi batas {batas} MB. Perkecil dulu gambarnya.")
+        return True
+    return False
+
+
+def cb_sisip_gambar(i, j):
+    n = ss["_pn"]
+    berkas, judul = ss.get(f"pn_file{n}"), (ss.get(f"pn_judul{n}") or "").strip()
+    if berkas is None:
+        ss["_pesan"] = ("warning", "Pilih file gambarnya dulu.")
+        return
+    if not judul:
+        ss["_pesan"] = ("warning", "Isi judul gambar dulu. Nomornya dihitung otomatis.")
+        return
+    if berkas_ditolak(berkas):
+        return
+    kunci = f"bab{i}_s{j}_isi"
+    pilihan = si.pilihan_letak(ss.get(kunci, ""))
+    indeks, label = pilihan[min(ss.get(f"pn_letak{n}", len(pilihan) - 1), len(pilihan) - 1)]
+    ss[kunci] = si.sisipkan_gambar(ss.get(kunci, ""), indeks, simpan_gambar(berkas), judul,
+                                   ss.get(f"pn_sumber{n}", ""), ss.get(f"pn_lebar{n}", si.LEBAR_BAWAAN_CM))
+    tutup_panel()
+    letak = label.split(":")[0]
+    ss["_pesan"] = ("success", f"Gambar ditambahkan {letak[0].lower() + letak[1:]}.")
+
+
+def pilih_letak(i, j):
+    pilihan = si.pilihan_letak(ss.get(f"bab{i}_s{j}_isi", ""))
+    st.selectbox("Letak", range(len(pilihan)), index=len(pilihan) - 1, format_func=lambda x: pilihan[x][1],
+                 key=f"pn_letak{ss['_pn']}")
+
+
+def panel_tambah_gambar(i, j):
+    n = ss["_pn"]
+    with st.container(border=True):
+        berkas = st.file_uploader("File gambar (png atau jpg)", type=["png", "jpg", "jpeg"], key=f"pn_file{n}")
+        if berkas:
+            st.image(berkas, width=200)
+        c1, c2 = st.columns(2)
+        c1.text_input("Judul gambar", key=f"pn_judul{n}", placeholder="mis. Grafik Penjualan 2021 sampai 2025")
+        c2.text_input("Sumber (kosongkan bila olahan sendiri)", key=f"pn_sumber{n}")
+        st.slider("Lebar (cm)", si.LEBAR_MIN_CM, si.LEBAR_MAX_CM, si.LEBAR_BAWAAN_CM, 0.5, key=f"pn_lebar{n}")
+        pilih_letak(i, j)
+        c1 = c2 = st.container(horizontal=True)
+        c1.button("Sisipkan", type="primary", key=f"pn_sisip{n}", on_click=cb_sisip_gambar, args=(i, j))
+        c2.button("Batal", key=f"pn_batal{n}", on_click=tutup_panel)
+
+
+def cb_susun(i, j):
+    ss["_susun"] = None if ss.get("_susun") == (i, j) else (i, j)
+    tutup_panel()
+
+
+def blok_subbab(i, j, k, jenis=None):
+    """Blok ke-k di subbab itu, atau None bila teksnya sudah berubah sehingga blok itu bukan lagi yang dimaksud."""
+    blok = si.pecah_blok(ss.get(f"bab{i}_s{j}_isi", ""))
+    if k is None or k >= len(blok) or (jenis and blok[k]["jenis"] != jenis):
+        return None
+    return blok[k]
+
+
+def cb_pindah_blok(i, j, k, arah):
+    kunci = f"bab{i}_s{j}_isi"
+    ss[kunci] = si.pindah_blok(ss.get(kunci, ""), k, arah)
+    tutup_panel()
+
+
+def cb_hapus_blok(i, j, k):
+    tanda = f"blok_{i}_{j}_{k}"
+    blok = blok_subbab(i, j, k)
+    if blok is None:
+        return
+    if ss.get("_yakin") != tanda:   # klik pertama hanya meminta konfirmasi
+        ss["_panel"] = None
+        ss["_yakin"] = tanda
+        return
+    kunci = f"bab{i}_s{j}_isi"
+    ss[kunci] = si.hapus_blok(ss[kunci], k)
+    tutup_panel()
+    if blok["jenis"] == "gambar":
+        ss["_pesan"] = ("success", "Gambar dihapus dari subbab ini. Filenya masih ada di tab Gambar & logo.")
+    else:
+        ss["_pesan"] = ("success", "Judul sub-subbab dihapus. Paragraf di bawahnya tetap ada.")
+
+
+def cb_ubah_gambar(i, j, k):
+    n = ss["_pn"]
+    if blok_subbab(i, j, k, "gambar") is None:
+        tutup_panel()
+        return
+    judul, berkas = (ss.get(f"pn_judul{n}") or "").strip(), ss.get(f"pn_file{n}")
+    if not judul:
+        ss["_pesan"] = ("warning", "Judul gambar tidak boleh kosong.")
+        return
+    if berkas is not None and berkas_ditolak(berkas):
+        return
+    kunci = f"bab{i}_s{j}_isi"
+    ss[kunci] = si.ubah_gambar(ss[kunci], k, judul, ss.get(f"pn_sumber{n}", ""), ss.get(f"pn_lebar{n}"),
+                               simpan_gambar(berkas) if berkas is not None else None)
+    tutup_panel()
+    ss["_pesan"] = ("success", "Gambar diperbarui.")
+
+
+def cb_unggah_hilang(i, j, k):
+    """Unggah file untuk penanda gambar yang filenya belum ada; disimpan dengan nama yang tertulis di penanda."""
+    blok, berkas = blok_subbab(i, j, k, "gambar"), ss.get(f"pn_file{ss['_pn']}")
+    if blok is None or berkas is None:
+        ss["_pesan"] = ("warning", "Pilih file gambarnya dulu.")
+        return
+    if berkas_ditolak(berkas):
+        return
+    ss["_gambar_simpan"] = {**ss.get("_gambar_simpan", {}), blok["data"]["file"]: berkas.getvalue()}
+    tutup_panel()
+    ss["_pesan"] = ("success", "File gambar tersimpan.")
+
+
+def judul_sudah_ada(i, j, judul, kecuali=None):
+    blok = si.pecah_blok(ss.get(f"bab{i}_s{j}_isi", ""))
+    return any(b["jenis"] == "subjudul" and k != kecuali and b["data"]["judul"].lower() == judul.lower()
+               for k, b in enumerate(blok))
+
+
+def cb_sisip_subjudul(i, j):
+    n = ss["_pn"]
+    judul = si.bersihkan_subjudul(ss.get(f"pn_judul{n}"))
+    if not judul:
+        ss["_pesan"] = ("warning", "Isi judul sub-subbabnya dulu.")
+        return
+    kunci = f"bab{i}_s{j}_isi"
+    kembar = judul_sudah_ada(i, j, judul)
+    pilihan = si.pilihan_letak(ss.get(kunci, ""))
+    indeks, _ = pilihan[min(ss.get(f"pn_letak{n}", len(pilihan) - 1), len(pilihan) - 1)]
+    ss[kunci] = si.sisipkan_subjudul(ss.get(kunci, ""), indeks, judul)
+    tutup_panel()
+    ss["_pesan"] = (("warning", f"Sub-subbab ditambahkan, tetapi judul “{judul}” sudah ada di subbab ini.") if kembar
+                    else ("success", "Sub-subbab ditambahkan. Nomornya dihitung otomatis."))
+
+
+def cb_ubah_subjudul(i, j, k):
+    judul = si.bersihkan_subjudul(ss.get(f"pn_judul{ss['_pn']}"))
+    if blok_subbab(i, j, k, "subjudul") is None:
+        tutup_panel()
+        return
+    if not judul:
+        ss["_pesan"] = ("warning", "Judul sub-subbab tidak boleh kosong.")
+        return
+    kunci = f"bab{i}_s{j}_isi"
+    ss[kunci] = si.ubah_subjudul(ss[kunci], k, judul)
+    tutup_panel()
+    ss["_pesan"] = ("success", "Judul sub-subbab diubah.")
+
+
+def nomor_subjudul_baru(i, j, indeks_sisip):
+    """Nomor yang akan didapat sub-subbab bila disisipkan di posisi itu, mis. '2.1.3'."""
+    data = kumpulkan_data()
+    if not data["bab"][i]["subbab"][j]["judul"].strip():
+        return None
+    sub = data["bab"][i]["subbab"][j]
+    sub["isi"] = si.sisipkan_subjudul(sub["isi"], indeks_sisip, "x")
+    blok = si.pecah_blok(sub["isi"])
+    k = indeks_sisip if blok and indeks_sisip < len(blok) - 1 else len(blok) - 1
+    return si.nomor_blok(data, i, j).get(k)
+
+
+def panel_tambah_subjudul(i, j):
+    n = ss["_pn"]
+    with st.container(border=True):
+        st.text_input("Judul sub-subbab", key=f"pn_judul{n}", placeholder="mis. Teori Perilaku Terencana")
+        pilih_letak(i, j)
+        pilihan = si.pilihan_letak(ss.get(f"bab{i}_s{j}_isi", ""))
+        letak = min(ss.get(f"pn_letak{n}", len(pilihan) - 1), len(pilihan) - 1)
+        nomor = nomor_subjudul_baru(i, j, pilihan[letak][0])
+        st.caption(f"Akan menjadi {nomor}." if nomor else "Isi judul subbabnya dulu supaya sub-subbab ini bernomor.")
+        c1 = c2 = st.container(horizontal=True)
+        c1.button("Sisipkan", type="primary", key=f"pn_sisip{n}", on_click=cb_sisip_subjudul, args=(i, j))
+        c2.button("Batal", key=f"pn_batal{n}", on_click=tutup_panel)
+
+
+def panel_ubah_subjudul(i, j, k, judul, aksi=cb_ubah_subjudul):
+    n = ss["_pn"]
+    with st.container(border=True):
+        st.text_input("Judul sub-subbab", value=judul, key=f"pn_judul{n}")
+        c1 = c2 = st.container(horizontal=True)
+        c1.button("Simpan", type="primary", key=f"pn_simpan{n}", on_click=aksi, args=(i, j, k))
+        c2.button("Batal", key=f"pn_batal{n}", on_click=tutup_panel)
+
+
+def md_aman(teks):
+    for c in "\\*_`$[":
+        teks = teks.replace(c, "\\" + c)
+    return teks
+
+
+def tombol_ikon(wadah, ikon, bantuan, kunci, aksi, args, **opsi):
+    wadah.button("", icon=f":material/{ikon}:", help=bantuan, key=kunci, on_click=aksi, args=args, **opsi)
+
+
+def panel_ubah_gambar(i, j, k, data):
+    n = ss["_pn"]
+    with st.container(border=True):
+        c1, c2 = st.columns(2)
+        c1.text_input("Judul gambar", value=data["judul"], key=f"pn_judul{n}")
+        c2.text_input("Sumber (kosongkan bila olahan sendiri)", value=data["sumber"], key=f"pn_sumber{n}")
+        st.slider("Lebar (cm)", si.LEBAR_MIN_CM, si.LEBAR_MAX_CM,
+                  min(max(data["lebar"], si.LEBAR_MIN_CM), si.LEBAR_MAX_CM), 0.5, key=f"pn_lebar{n}")
+        st.file_uploader("Ganti file gambar (opsional)", type=["png", "jpg", "jpeg"], key=f"pn_file{n}")
+        c1 = c2 = st.container(horizontal=True)
+        c1.button("Simpan", type="primary", key=f"pn_simpan{n}", on_click=cb_ubah_gambar, args=(i, j, k))
+        c2.button("Batal", key=f"pn_batal{n}", on_click=tutup_panel)
+
+
+def panel_unggah_hilang(i, j, k, nama):
+    n = ss["_pn"]
+    with st.container(border=True):
+        st.file_uploader(f"File untuk {nama}", type=["png", "jpg", "jpeg"], key=f"pn_file{n}")
+        c1 = c2 = st.container(horizontal=True)
+        c1.button("Simpan", type="primary", key=f"pn_simpan{n}", on_click=cb_unggah_hilang, args=(i, j, k))
+        c2.button("Batal", key=f"pn_batal{n}", on_click=tutup_panel)
+
+
+def susunan_subbab(i, j):
+    """Daftar blok satu subbab dengan tombol pindah, ubah, dan hapus."""
+    teks = ss.get(f"bab{i}_s{j}_isi", "")
+    blok = si.pecah_blok(teks)
+    if not blok:
+        st.caption("Subbab ini masih kosong.")
+        return
+    nomor = si.nomor_blok(kumpulkan_data(), i, j)
+    gambar = kumpulkan_gambar()
+    with st.container(border=True, key=f"susun_{i}_{j}"):
+        st.caption("Naik atau Turun memindahkan gambar, tabel, rumus, atau judul sub-subbab melewati satu blok. "
+                   "Paragraf diedit di kotak teks di atas.")
+        for k, b in enumerate(blok):
+            jenis, data, ident = b["jenis"], b["data"], (i, j, k)
+            baris = st.container(horizontal=True, vertical_alignment="center", key=f"blok_{i}_{j}_{k}")
+            ada_file = jenis != "gambar" or data["file"] in gambar
+            if jenis == "gambar":
+                if ada_file:
+                    baris.image(gambar[data["file"]], width=120)
+                else:
+                    baris.markdown('<div class="gbr-hilang">File gambar belum diupload</div>',
+                                   unsafe_allow_html=True, width=120)
+                baris.markdown(f"**{nomor.get(k, 'Gambar')}.** {md_aman(data['judul']) or '(tanpa judul)'}  \n"
+                               f":small[lebar {data['lebar']:g} cm, file {md_aman(data['file'])}]", width="stretch")
+            elif jenis == "tabel":
+                baris.markdown(f":material/table: **{nomor.get(k, 'Tabel')}.** "
+                               f"{md_aman(data['judul']) or '(tanpa judul)'}", width="stretch")
+            elif jenis == "rumus":
+                baris.markdown(f"**{nomor.get(k, 'Rumus')}** `{data['rumus']}`", width="stretch")
+            elif jenis == "subjudul":
+                baris.markdown(f"**{nomor.get(k, '')} {md_aman(data['judul'])}**", width="stretch")
+            else:
+                baris.markdown(f":small[{md_aman(si.cuplikan(b['teks'], 90))}]", width="stretch")
+            if jenis != "paragraf" and jenis != "daftar":
+                tombol_ikon(baris, "arrow_upward", "Naik", f"naik_{i}_{j}_{k}", cb_pindah_blok, (*ident, -1),
+                            disabled=k == 0)
+                tombol_ikon(baris, "arrow_downward", "Turun", f"turun_{i}_{j}_{k}", cb_pindah_blok, (*ident, 1),
+                            disabled=k == len(blok) - 1)
+            if jenis in ("gambar", "subjudul"):
+                if jenis == "subjudul":
+                    tombol_ikon(baris, "edit", "Ubah nama", f"ubah_{i}_{j}_{k}", cb_panel, ("ubah_subjudul", *ident))
+                elif ada_file:
+                    tombol_ikon(baris, "edit", "Ubah judul, sumber, lebar, atau file", f"ubah_{i}_{j}_{k}",
+                                cb_panel, ("ubah_gambar", *ident))
+                else:
+                    tombol_ikon(baris, "upload", "Upload file gambarnya", f"unggah_{i}_{j}_{k}",
+                                cb_panel, ("unggah", *ident))
+                yakin = ss.get("_yakin") == f"blok_{i}_{j}_{k}"
+                tombol_ikon(baris, "delete", "Klik sekali lagi untuk menghapus" if yakin else "Hapus dari subbab ini",
+                            f"hapus_{i}_{j}_{k}", cb_hapus_blok, ident, type="primary" if yakin else "secondary")
+                if yakin:
+                    st.caption("Klik tombol hapus sekali lagi. " + (
+                        "Gambar dihapus dari subbab ini, filenya tetap tersimpan." if jenis == "gambar"
+                        else "Hanya judul sub-subbabnya yang dihapus, paragraf di bawahnya tetap ada."))
+            if panel_terbuka("ubah_gambar", *ident):
+                panel_ubah_gambar(*ident, data)
+            elif panel_terbuka("unggah", *ident):
+                panel_unggah_hilang(*ident, data["file"])
+            elif panel_terbuka("ubah_subjudul", *ident):
+                panel_ubah_subjudul(*ident, data["judul"])
+
+
+def alat_subbab(i, j):
+    """Tombol dan panel di bawah kotak isi satu subbab."""
+    baris = st.container(horizontal=True)
+    baris.button("Tambah gambar", key=f"tg_{i}_{j}", on_click=cb_panel, args=("gambar", i, j))
+    baris.button("Tambah sub-subbab", key=f"ts_{i}_{j}", on_click=cb_panel, args=("subjudul", i, j))
+    dibuka = ss.get("_susun") == (i, j)
+    baris.button("Tutup susunan" if dibuka else "Atur susunan", key=f"as_{i}_{j}", on_click=cb_susun, args=(i, j))
+    if panel_terbuka("gambar", i, j):
+        panel_tambah_gambar(i, j)
+    elif panel_terbuka("subjudul", i, j):
+        panel_tambah_subjudul(i, j)
+    if dibuka:
+        susunan_subbab(i, j)
+
+
+# ----- panel Kerangka laporan: nama dan urutan bab, subbab, dan sub-subbab -----
+def tukar_subbab(i, j, k):
+    return si.tukar_subbab(ss, i, j, k)
+
+
+def sisip_subbab(i, j):
+    return si.sisip_subbab(ss, i, j)
+
+
+def hapus_subbab(i, j):
+    return si.hapus_subbab(ss, i, j)
+
+
+def tutup_semua_panel():
+    """Indeks subbab berubah, jadi panel dan Atur susunan yang terbuka tidak lagi menunjuk subbab yang benar."""
+    tutup_panel()
+    ss["_susun"] = None
+
+
 def cb_tambah_sub(i):
-    n = ss[f"bab{i}_n"]
-    ss[f"bab{i}_s{n}_judul"] = ""
-    ss[f"bab{i}_s{n}_isi"] = ""
-    ss[f"bab{i}_n"] = n + 1
+    sisip_subbab(i, ss[f"bab{i}_n"])
+    tutup_semua_panel()
 
 
-def cb_hapus_sub(i):
-    if ss[f"bab{i}_n"] > 0:
-        ss[f"bab{i}_n"] -= 1
+def cb_kr_pindah_sub(i, j, arah):
+    if tukar_subbab(i, j, j + arah):
+        tutup_semua_panel()
+
+
+def cb_kr_sisip_sub(i, j):
+    baru = sisip_subbab(i, j + 1)
+    tutup_semua_panel()
+    cb_panel("kr_sub", i, baru)      # langsung minta judulnya
+
+
+def cb_kr_hapus_sub(i, j):
+    tanda = f"sub_{i}_{j}"
+    if ss.get("_yakin") != tanda:
+        ss["_panel"] = None
+        ss["_yakin"] = tanda
+        return
+    judul = ss.get(f"bab{i}_s{j}_judul", "").strip()
+    hapus_subbab(i, j)
+    tutup_semua_panel()
+    ss["_pesan"] = ("success", f"Subbab “{judul}” dihapus." if judul else "Subbab dihapus.")
+
+
+def cb_kr_simpan_judul(jenis, i, j=None, k=None):
+    judul = " ".join((ss.get(f"pn_judul{ss['_pn']}") or "").split())
+    if not judul:
+        ss["_pesan"] = ("warning", "Judul tidak boleh kosong.")
+        return
+    if jenis == "kr_bab":
+        ss[f"bab{i}_judul"] = judul
+    elif jenis == "kr_sub":
+        ss[f"bab{i}_s{j}_judul"] = judul
+    else:
+        judul = si.bersihkan_subjudul(judul)
+        kunci = f"bab{i}_s{j}_isi"
+        if jenis == "kr_subjudul_baru":
+            kembar = judul_sudah_ada(i, j, judul)
+            ss[kunci] = si.sisipkan_subjudul(ss.get(kunci, ""), len(si.pecah_blok(ss.get(kunci, ""))), judul)
+            if kembar:
+                tutup_panel()
+                ss["_pesan"] = ("warning", f"Sub-subbab ditambahkan, tetapi judul “{judul}” sudah ada di subbab ini.")
+                return
+        elif blok_subbab(i, j, k, "subjudul") is not None:
+            ss[kunci] = si.ubah_subjudul(ss[kunci], k, judul)
+    tutup_panel()
+    ss["_pesan"] = ("success", "Kerangka diperbarui. Daftar isi mengikuti.")
+
+
+def cb_kr_pindah_bagian(i, j, k, arah):
+    kunci = f"bab{i}_s{j}_isi"
+    ss[kunci] = si.pindah_bagian(ss.get(kunci, ""), k, arah)
+    tutup_panel()
+
+
+def panel_judul(label, nilai, jenis, i, j=None, k=None):
+    n = ss["_pn"]
+    with st.container(border=True):
+        st.text_input(label, value=nilai, key=f"pn_judul{n}")
+        baris = st.container(horizontal=True)
+        baris.button("Simpan", type="primary", key=f"pn_simpan{n}", on_click=cb_kr_simpan_judul, args=(jenis, i, j, k))
+        baris.button("Batal", key=f"pn_batal{n}", on_click=tutup_panel)
+
+
+def baris_terkunci(teks):
+    st.markdown(f":material/lock: {teks} :small[· mengikuti panduan]")
+
+
+def kerangka_laporan():
+    """Susunan laporan seperti daftar isi, dengan aksi ubah nama, pindah, tambah, dan hapus."""
+    st.caption("Daftar isi di file Word dibentuk dari judul-judul ini, jadi yang diubah di sini adalah judul aslinya. "
+               "Judul ditampilkan seperti yang akan tercetak.")
+    baris_terkunci("Halaman awal: Halaman Judul, Pengesahan, Pernyataan, Kata Pengantar, Daftar Isi, "
+                   "Daftar Tabel dan Gambar, Intisari, Abstract")
+    for i in range(ss["jml_bab"]):
+        romawi = ROMAWI[i + 1] if i + 1 < len(ROMAWI) else str(i + 1)
+        judul_bab = ss.get(f"bab{i}_judul", "")
+        baris = st.container(horizontal=True, vertical_alignment="center", key=f"kr_bab_{i}")
+        baris.markdown(f"**BAB {romawi} {md_aman(judul_bab.upper()) or '(belum berjudul)'}**", width="stretch")
+        tombol_ikon(baris, "edit", "Ubah nama bab", f"kr_ubah_bab_{i}", cb_panel, ("kr_bab", i, None))
+        if panel_terbuka("kr_bab", i, None):
+            panel_judul("Judul bab", judul_bab, "kr_bab", i)
+        n_sub, no_sub = ss[f"bab{i}_n"], 0
+        for j in range(n_sub):
+            judul = ss.get(f"bab{i}_s{j}_judul", "").strip()
+            no_sub += bool(judul)
+            isi = ss.get(f"bab{i}_s{j}_isi", "")
+            baris = st.container(horizontal=True, vertical_alignment="center", key=f"kr_sub_{i}_{j}")
+            baris.markdown(f"{i + 1}.{no_sub} {md_aman(judul_kapital(judul))}" if judul
+                           else ":small[(subbab belum berjudul, tidak ikut dicetak)]", width="stretch")
+            tombol_ikon(baris, "edit", "Ubah nama subbab", f"kr_ubah_{i}_{j}", cb_panel, ("kr_sub", i, j))
+            tombol_ikon(baris, "arrow_upward", "Naik, beserta isinya", f"kr_naik_{i}_{j}", cb_kr_pindah_sub,
+                        (i, j, -1), disabled=j == 0)
+            tombol_ikon(baris, "arrow_downward", "Turun, beserta isinya", f"kr_turun_{i}_{j}", cb_kr_pindah_sub,
+                        (i, j, 1), disabled=j == n_sub - 1)
+            tombol_ikon(baris, "add", "Tambah subbab di bawah ini", f"kr_tambah_{i}_{j}", cb_kr_sisip_sub, (i, j))
+            tombol_ikon(baris, "subdirectory_arrow_right", "Tambah sub-subbab di subbab ini", f"kr_baruss_{i}_{j}",
+                        cb_panel, ("kr_subjudul_baru", i, j))
+            yakin = ss.get("_yakin") == f"sub_{i}_{j}"
+            tombol_ikon(baris, "delete", "Klik sekali lagi untuk menghapus" if yakin else "Hapus subbab",
+                        f"kr_hapus_{i}_{j}", cb_kr_hapus_sub, (i, j), type="primary" if yakin else "secondary")
+            if yakin:
+                r = si.ringkasan_isi(isi)
+                ikut = [f"{r[x]} {x}" for x in ("paragraf", "gambar", "tabel") if r[x]]
+                st.warning("Klik tombol hapus sekali lagi untuk menghapus subbab ini"
+                           + (f" beserta isinya: {', '.join(ikut)}." if ikut else ". Isinya masih kosong."))
+            if panel_terbuka("kr_sub", i, j):
+                panel_judul("Judul subbab", judul, "kr_sub", i, j)
+            elif panel_terbuka("kr_subjudul_baru", i, j):
+                panel_judul("Judul sub-subbab baru (ditaruh di akhir subbab ini)", "", "kr_subjudul_baru", i, j)
+            no_ss = 0
+            for k, b in enumerate(si.pecah_blok(isi)):
+                if b["jenis"] != "subjudul":
+                    continue
+                no_ss += 1
+                baris = st.container(horizontal=True, vertical_alignment="center", key=f"kr_ss_{i}_{j}_{k}")
+                nomor = f"{i + 1}.{no_sub}.{no_ss} " if judul else ""
+                baris.markdown(nomor + md_aman(judul_kapital(b["data"]["judul"])), width="stretch")
+                tombol_ikon(baris, "edit", "Ubah nama sub-subbab", f"kr_ssubah_{i}_{j}_{k}", cb_panel,
+                            ("kr_subjudul", i, j, k))
+                tombol_ikon(baris, "arrow_upward", "Naik, beserta paragraf di bawahnya", f"kr_ssnaik_{i}_{j}_{k}",
+                            cb_kr_pindah_bagian, (i, j, k, -1), disabled=not si.bisa_pindah_bagian(isi, k, -1))
+                tombol_ikon(baris, "arrow_downward", "Turun, beserta paragraf di bawahnya", f"kr_ssturun_{i}_{j}_{k}",
+                            cb_kr_pindah_bagian, (i, j, k, 1), disabled=not si.bisa_pindah_bagian(isi, k, 1))
+                yakin = ss.get("_yakin") == f"blok_{i}_{j}_{k}"
+                tombol_ikon(baris, "delete", "Klik sekali lagi untuk menghapus" if yakin else "Hapus sub-subbab",
+                            f"kr_sshapus_{i}_{j}_{k}", cb_hapus_blok, (i, j, k),
+                            type="primary" if yakin else "secondary")
+                if yakin:
+                    st.caption("Klik tombol hapus sekali lagi. Hanya judulnya yang dihapus, paragraf di bawahnya "
+                               "tetap ada.")
+                if panel_terbuka("kr_subjudul", i, j, k):
+                    panel_judul("Judul sub-subbab", b["data"]["judul"], "kr_subjudul", i, j, k)
+    baris_terkunci("Daftar Pustaka dan Lampiran")
 
 
 def cb_tambah_bab():
@@ -592,9 +1071,9 @@ with st.sidebar:
     st.caption("Simpan isianmu sebagai file .json supaya bisa dilanjutkan lain waktu atau di komputer lain.")
     st.download_button("Simpan progres (.json)",
                        data=json.dumps(kumpulkan_data(), ensure_ascii=False, indent=2),
-                       file_name="progres_ta.json", mime="application/json", use_container_width=True)
+                       file_name="progres_ta.json", mime="application/json", width="stretch")
     st.file_uploader("Muat progres", type=["json"], key="upload_progres")
-    st.button("Muat file progres", on_click=cb_muat_progres, use_container_width=True)
+    st.button("Muat file progres", on_click=cb_muat_progres, width="stretch")
     if MODE_WEB:
         st.divider()
         if SIMPAN_BROWSER:
@@ -604,7 +1083,7 @@ with st.sidebar:
             st.markdown('<div class="catatan-sisi">Isian, gambar, dan logo disimpan di browser ini, <b>bukan di '
                         'server</b>, dan hanya terbaca di browser dan perangkat yang sama. Untuk pindah perangkat '
                         'atau berjaga-jaga, tetap pakai <b>Simpan progres (.json)</b>.</div>', unsafe_allow_html=True)
-            st.button("Hapus simpanan di perangkat ini", on_click=cb_hapus_simpanan, use_container_width=True)
+            st.button("Hapus simpanan di perangkat ini", on_click=cb_hapus_simpanan, width="stretch")
             st.caption("Hapus bila kamu memakai komputer bersama. Teks di kotak isian baru tercatat setelah kamu "
                        "klik di luar kotak atau menekan Ctrl/Cmd + Enter.")
         else:
@@ -630,12 +1109,12 @@ with st.sidebar:
         with st.expander(f"Riwayat versi ({len(riwayat)})"):
             if riwayat:
                 st.selectbox("Pilih versi", [n for n, _ in riwayat], format_func=dict(riwayat).get, key="pilih_riwayat")
-                st.button("Pulihkan versi ini", on_click=cb_pulihkan_riwayat, use_container_width=True)
+                st.button("Pulihkan versi ini", on_click=cb_pulihkan_riwayat, width="stretch")
                 st.caption("Cadangan dibuat tiap 5 menit dan sebelum isian ditimpa. Disimpan 30 versi terakhir.")
             else:
                 st.caption("Belum ada riwayat.")
     st.divider()
-    st.button("Isi dengan data contoh", on_click=cb_muat_contoh, use_container_width=True)
+    st.button("Isi dengan data contoh", on_click=cb_muat_contoh, width="stretch")
     st.caption("Untuk mencoba hasilnya tanpa mengetik. "
                + ("Isian yang sedang kamu kerjakan akan tertimpa, jadi simpan progres dulu."
                   if MODE_WEB else "Isianmu sekarang dicadangkan dulu ke riwayat."))
@@ -643,7 +1122,7 @@ with st.sidebar:
         with st.expander("Tentang data kamu"):
             st.markdown(tp.TENTANG_DATA_SIMPAN if SIMPAN_BROWSER else tp.TENTANG_DATA)
     st.divider()
-    st.button(f"Yang baru (versi {pb.VERSI})", on_click=cb_buka_yang_baru, use_container_width=True)
+    st.button(f"Yang baru (versi {pb.VERSI})", on_click=cb_buka_yang_baru, width="stretch")
     st.markdown(f'<div class="catatan-sisi">Dibuat oleh <b>{tp.PEMBUAT}</b></div>', unsafe_allow_html=True)
 
 with st.container(key="tombol_tema"):   # ditaruh di pojok kanan atas lembar lewat CSS (.st-key-tombol_tema)
@@ -673,8 +1152,8 @@ if ss["_autosave_status"] == "tanya":
                     + (f", berjudul “{inf['judul']}”" if inf.get("judul") else "")
                     + f", dengan {inf.get('kata_bab', 0)} kata di bab. Mau dilanjutkan?")
         k1, k2, _ = st.columns([1, 1, 3])
-        k1.button("Lanjutkan", type="primary", on_click=cb_lanjutkan_autosave, use_container_width=True)
-        k2.button("Mulai dari awal", on_click=cb_mulai_baru, use_container_width=True)
+        k1.button("Lanjutkan", type="primary", on_click=cb_lanjutkan_autosave, width="stretch")
+        k2.button("Mulai dari awal", on_click=cb_mulai_baru, width="stretch")
 
 # ---------------------------------------------------------------------------
 def tampil_draft():
@@ -819,13 +1298,16 @@ def tampil_awal():
 
 # ---------------------------------------------------------------------------
 def tampil_bab():
+    with st.expander("Kerangka laporan", expanded=False):
+        kerangka_laporan()
     with st.expander("Cara menulis isi dan penanda khusus", expanded=False):
         st.markdown("""
 - **Satu baris = satu paragraf.** Paragraf pertama setelah judul otomatis rata kiri, berikutnya menjorok 1,25 cm.
-- `### Judul` untuk sub-subbab (bernomor otomatis, mis. 1.1.1)
+- Sub-subbab: pakai tombol **Tambah sub-subbab** di bawah kotak isi, atau ketik `### Judul`. Nomornya otomatis (mis. 1.1.1)
 - `1. teks`, `a. teks`, `(1) teks` untuk perincian tingkat 1, 2, dan 3
 - `*kata*` untuk huruf *miring* (istilah asing), `**kata**` untuk huruf **tebal**
-- Gambar (upload dulu di tahap 2, tab Gambar & logo): `[[GAMBAR: nama_file.png | Judul Gambar | Sumber | lebar_cm]]`
+- Gambar: cara termudah pakai tombol **Tambah gambar** di bawah kotak isi subbab. Pilih filenya, isi judul, pilih letaknya, lalu penandanya ditulis otomatis. Penanda manual tetap bisa dipakai: `[[GAMBAR: nama_file.png | Judul Gambar | Sumber | lebar_cm]]`
+- **Atur susunan** menampilkan isi subbab sebagai daftar blok: gambar, tabel, dan rumus bisa dinaikkan atau diturunkan, dan gambar bisa diubah judul, sumber, lebar, atau filenya
 - Tabel (baris pertama = header, kolom dipisah `|`):
 ```
 [[TABEL: Judul Tabel | Sumber]]
@@ -843,6 +1325,8 @@ Tahun | Jumlah
 Hasil uji ditunjukkan pada [[REF: #regresi]].
 ```
   Kalimat itu menjadi "Hasil uji ditunjukkan pada Tabel 4.2." dan nomornya ikut berubah bila urutan isi berubah. Gambar otomatis berlabel nama filenya tanpa ekstensi (`grafik.png` menjadi `#grafik`). Rumus: `[[RUMUS: Y = a + bX | #model]]` dirujuk sebagai "Persamaan (1)".
+
+Nama dan urutan subbab serta sub-subbab bisa diatur di panel **Kerangka laporan** di atas; daftar isi mengikuti.
 
 Nomor tabel dan gambar (Tabel 3.1., Gambar 4.2.) dihitung otomatis per bab. Sumber boleh dikosongkan bila hasil olahan sendiri.
 
@@ -871,7 +1355,8 @@ Kutipan seperti `(Santoso, 2021)` atau `Santoso dan Putri (2021)`, termasuk di k
                 sumber_tabel = st.text_input("Sumber (kosongkan bila hasil olahan sendiri)", key="tabel_sumber")
                 tujuan = [f"{i + 1}.{j + 1} {ss.get(f'bab{i}_s{j}_judul', '')}".strip() for i, j in daftar_subbab()]
                 st.selectbox("Sisipkan ke subbab", tujuan, key="tabel_tujuan")
-                koma = st.checkbox("Pakai koma untuk desimal", value=True, key="tabel_koma")
+                ss.setdefault("tabel_koma", True)
+                koma = st.checkbox("Pakai koma untuk desimal", key="tabel_koma")
                 dipilih = baris_tabel[int(awal) - 1: int(akhir)]
                 pratinjau = tbi.format_tabel(dipilih, koma)
                 if not pratinjau:
@@ -896,12 +1381,11 @@ Kutipan seperti `(Santoso, 2021)` atau `Santoso dan Putri (2021)`, termasuk di k
                 st.text_input(f"Subbab {i + 1}.{j + 1}", key=f"bab{i}_s{j}_judul", placeholder="Judul subbab")
                 st.text_area("Isi", key=f"bab{i}_s{j}_isi", height=180, label_visibility="collapsed",
                              placeholder="Tulis atau tempel isi subbab di sini")
-            c1, c2, _ = st.columns([1, 1.4, 3])
-            c1.button("Tambah subbab", key=f"tambah_sub{i}", on_click=cb_tambah_sub, args=(i,))
-            c2.button("Hapus subbab terakhir", key=f"hapus_sub{i}", on_click=cb_hapus_sub, args=(i,))
-    c1, c2, _ = st.columns([1, 1.4, 3.4])
-    c1.button("Tambah bab", on_click=cb_tambah_bab)
-    c2.button("Hapus bab terakhir", on_click=cb_hapus_bab)
+                alat_subbab(i, j)
+            st.button("Tambah subbab", key=f"tambah_sub{i}", on_click=cb_tambah_sub, args=(i,))
+    baris = st.container(horizontal=True)
+    baris.button("Tambah bab", on_click=cb_tambah_bab)
+    baris.button("Hapus bab terakhir", on_click=cb_hapus_bab)
 
 # ---------------------------------------------------------------------------
 def tampil_gambar():
@@ -914,20 +1398,21 @@ def tampil_gambar():
         st.image(ss["_logo_simpan"], width=120)
         st.caption("Logo dari pekerjaan tersimpan. Upload ulang hanya bila ingin mengganti.")
     st.subheader("Gambar untuk isi bab dan lampiran")
-    gambar_up = st.file_uploader("Gambar (bisa banyak sekaligus)", type=["png", "jpg", "jpeg"],
+    st.file_uploader("Gambar (bisa banyak sekaligus)", type=["png", "jpg", "jpeg"],
                                  accept_multiple_files=True, key="upload_gambar")
-    if gambar_up:
-        st.caption("Pakai nama file ini di penanda [[GAMBAR: …]]:")
+    st.caption("Gambar juga bisa ditambahkan langsung dari subbab: tahap 1, tab Bab, tombol Tambah gambar.")
+    semua = kumpulkan_gambar()
+    pakai = si.pemakaian_gambar(kumpulkan_data())
+    if semua:
+        st.markdown(f"**{len(semua)} gambar tersimpan**")
         kolom = st.columns(4)
-        for n, g in enumerate(gambar_up):
+        for n, nama in enumerate(sorted(semua)):
             with kolom[n % 4]:
-                st.image(g, use_container_width=True)
-                st.code(g.name, language=None)
-
-    tersimpan = list(ss.get("_gambar_simpan", {})) + list(ss.get("_gambar_draft", {}))
-    if tersimpan:
-        st.caption(f"{len(set(tersimpan))} gambar dari draft atau pekerjaan tersimpan sudah otomatis dipakai: "
-                   + ", ".join(sorted(set(tersimpan))))
+                st.image(semua[nama], width="stretch")
+                st.code(nama, language=None)
+                tempat = pakai.get(nama)
+                st.caption("Dipakai di " + ", ".join(t if t.startswith("Lampiran") else f"subbab {t}"
+                                                     for t in tempat) if tempat else "Belum dipakai")
 
 # ---------------------------------------------------------------------------
 def tampil_pustaka():
@@ -1092,7 +1577,8 @@ def tampil_preview():
         st.caption("Ringkasan isi setiap subbab, lengkap dengan nomor tabel dan gambar seperti di hasil akhir.")
         st.markdown("".join(tp.kerangka_bab(bab) for bab in struktur), unsafe_allow_html=True)
     else:
-        zoom = st.slider("Perbesaran", 40, 100, 70, step=5, format="%d%%", key="zoom_preview")
+        ss.setdefault("zoom_preview", 70)   # nilai awal lewat session_state, karena kunci ini dijaga jaga_isian()
+        zoom = st.slider("Perbesaran", 40, 100, step=5, format="%d%%", key="zoom_preview")
         st.caption(f"Tiruan lembar A4 dengan margin {tp.ringkas_margin(margin)}, serta font, spasi, dan penomoran "
                    "yang sama dengan file Word. Garis putus-putus adalah batas margin, tulisan merah berarti belum "
                    "diisi. Pemotongan halaman dan nomor halaman yang pasti baru dihitung oleh Word.")
@@ -1130,9 +1616,9 @@ def tampil_periksa_tulisan():
                 st.markdown(f"**{t['kata']}** sebaiknya **{t['saran']}**, {t['jumlah']} kali")
                 baris_lokasi(t)
             k2.button("Ganti semua", key=f"ganti_{t['kata']}", on_click=cb_ganti_kata, args=(t["kata"], t["saran"]),
-                      use_container_width=True)
+                      width="stretch")
             k3.button("Abaikan", key=f"abaikan_{t['kata']}", on_click=cb_abaikan_kata, args=(t["kata"],),
-                      use_container_width=True)
+                      width="stretch")
 
     st.subheader(f"Kemungkinan typo ({len(typo)})")
     st.caption("Kata yang tidak ada di kamus bahasa Indonesia. Ini kemungkinan, bukan kepastian: nama, istilah teknis, "
@@ -1150,11 +1636,11 @@ def tampil_periksa_tulisan():
                     kolom[0].caption("Ganti dengan:")
                     for kol, s_ejaan in zip(kolom[1:], saran):
                         kol.button(s_ejaan, key=f"typo_{t['kata']}_{s_ejaan}", on_click=cb_ganti_kata,
-                                   args=(t["kata"], s_ejaan), use_container_width=True)
+                                   args=(t["kata"], s_ejaan), width="stretch")
                 else:
                     st.caption("Tidak ada saran ejaan. Betulkan langsung di isi bab, atau abaikan.")
             k2.button("Abaikan", key=f"abaikan_{t['kata']}", on_click=cb_abaikan_kata, args=(t["kata"],),
-                      use_container_width=True)
+                      width="stretch")
     if len(typo) > n_tampil:
         st.button(f"Tampilkan {min(TYPO_PER_HALAMAN, len(typo) - n_tampil)} berikutnya", on_click=cb_lebih_banyak_typo)
 
@@ -1168,9 +1654,9 @@ def tampil_periksa_tulisan():
                 st.markdown(f"**{t['kata']}**, {t['jumlah']} kali")
                 baris_lokasi(t)
             k2.button("Jadikan miring", key=f"miring_{t['kata']}", on_click=cb_miringkan_kata, args=(t["kata"],),
-                      use_container_width=True)
+                      width="stretch")
             k3.button("Abaikan", key=f"abaikan_{t['kata']}", on_click=cb_abaikan_kata, args=(t["kata"],),
-                      use_container_width=True)
+                      width="stretch")
 
     if ss["abaikan_kata"]:
         st.subheader("Kata yang diabaikan")
@@ -1179,7 +1665,7 @@ def tampil_periksa_tulisan():
             k1, k2, _ = st.columns([2, 1.2, 3])
             k1.markdown(kata)
             k2.button("Kembalikan", key=f"kembalikan_{kata}", on_click=cb_kembalikan_kata, args=(kata,),
-                      use_container_width=True)
+                      width="stretch")
 
 
 def tampil_buat_file():

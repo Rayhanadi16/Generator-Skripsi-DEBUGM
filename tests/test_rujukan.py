@@ -1,6 +1,5 @@
 from pathlib import Path
 
-import pytest
 
 import rujukan
 from bantu_dokumen import teks_dokumen

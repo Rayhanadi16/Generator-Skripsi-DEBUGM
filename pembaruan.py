@@ -12,6 +12,23 @@ BULAN = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustu
 
 PEMBARUAN = [
     {
+        "versi": "1.11",
+        "tanggal": date(2026, 11, 17),
+        "judul": "Gambar, sub-subbab, dan kerangka",
+        "poin": [
+            "Tambah gambar langsung dari subbab: pilih filenya, isi judul dan sumber, atur lebarnya, lalu pilih "
+            "setelah paragraf mana gambar diletakkan. Tidak perlu mengetik penanda lagi.",
+            "Atur susunan di setiap subbab: naikkan atau turunkan gambar, tabel, dan rumus dengan tombol, "
+            "dan ubah judul, sumber, lebar, atau file gambar tanpa menyentuh penandanya.",
+            "Tambah sub-subbab tanpa mengetik ###: isi judulnya, pilih letaknya, dan nomornya dihitung sendiri. "
+            "Dari Atur susunan, sub-subbab bisa dipindah, diganti nama, atau dihapus.",
+            "Panel Kerangka laporan di tab Bab: ganti nama, tambah, hapus, dan ubah urutan subbab serta "
+            "sub-subbab dari satu tempat. Isinya ikut pindah, dan daftar isi selalu mengikuti.",
+            "Singkatan dan istilah berkapital khusus di judul (ROA, e-Commerce) tidak lagi diubah hurufnya.",
+            "Tab Gambar & logo sekarang menunjukkan setiap gambar dipakai di subbab mana.",
+        ],
+    },
+    {
         "versi": "1.10",
         "tanggal": date(2026, 11, 16),
         "judul": "Kemungkinan typo dan istilah asing",

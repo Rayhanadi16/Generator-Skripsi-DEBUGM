@@ -31,6 +31,7 @@ Kamu cukup mengisi identitas, isi bab, pustaka, dan gambar. Format diatur otomat
 | `tabel_impor.py` | Pembaca tabel dari Excel (.xlsx) atau CSV |
 | `rujukan.py` | Rujukan silang: label pada gambar, tabel, dan rumus, serta penanda `[[REF]]` |
 | `ekspor_pdf.py` | PDF pratinjau lewat LibreOffice |
+| `susun_isi.py` | Susunan blok isi subbab: menyisipkan, memindah, dan mengubah gambar, sub-subbab, tabel, dan rumus lewat tombol |
 | `periksa_tulisan.py` | Periksa tulisan: kata tidak baku, kemungkinan typo, dan istilah asing belum miring |
 | `data/kata_tidak_baku.csv` | Daftar kata tidak baku yang dipakai Periksa tulisan |
 | `data/istilah_dikenal.txt` | Istilah teknis yang sah tetapi tidak ada di kamus, supaya tidak ditandai typo |
@@ -272,6 +273,22 @@ Lihat hasilnya sebelum generate:
 
 Catatan: pemotongan halaman dan nomor halaman yang pasti baru dihitung oleh Word, jadi di preview
 setiap bab tampil sebagai satu lembar yang bisa memanjang.
+
+## Menyusun isi tanpa mengetik penanda
+
+Di tab **Bab**, di bawah kotak isi setiap subbab ada tiga tombol:
+
+| Tombol | Kegunaan |
+|---|---|
+| **Tambah gambar** | Pilih file, isi judul dan sumber, atur lebar (5 sampai 14 cm), lalu pilih setelah paragraf mana gambar diletakkan. Penandanya ditulis otomatis. Nama file yang sama dengan isi berbeda diberi nama baru (`grafik-2.png`), jadi gambar lama tidak tertimpa. |
+| **Tambah sub-subbab** | Isi judul dan pilih letaknya. Baris `### Judul` ditulis otomatis, dan panelnya menunjukkan nomor yang akan didapat (mis. 2.1.3). |
+| **Atur susunan** | Isi subbab tampil sebagai daftar blok. Gambar, tabel, rumus, dan judul sub-subbab bisa dinaikkan atau diturunkan melewati satu blok. Gambar bisa diubah judul, sumber, lebar, atau filenya; sub-subbab bisa diganti nama. Hapus meminta klik kedua, dan file gambarnya tetap tersimpan di tab Gambar & logo. |
+
+Di bagian atas tab Bab ada panel **Kerangka laporan**, yang menampilkan bab, subbab, dan sub-subbab seperti daftar isi. Dari sana judul bisa diganti, subbab bisa ditambah di posisi mana pun, dihapus, atau dipindah naik dan turun beserta seluruh isinya, dan sub-subbab bisa dipindah beserta paragraf di bawahnya. Daftar isi di file Word dibentuk dari judul-judul itu, jadi selalu sama dengan isi laporan. Halaman awal, Daftar Pustaka, dan Lampiran mengikuti panduan dan tidak bisa diubah dari sini.
+
+Semua tombol itu hanya menulis atau memindah penanda di teks isi subbab. Mengetik penanda sendiri tetap bisa, dan hasilnya sama.
+
+Di judul, singkatan dan kata berkapital khusus dibiarkan apa adanya (`ROA`, `e-Commerce`), kata tugas seperti dan, di, ke, dari, yang ditulis kecil kecuali di awal judul.
 
 ## Penanda khusus di isi bab
 

@@ -103,17 +103,29 @@ RE_LIST2 = re.compile(r"^([a-z])\.\s+(.*)$")
 RE_LIST3 = re.compile(r"^\((\d+)\)\s+(.*)$")
 
 
+def _awal_kapital(kata: str) -> str:
+    """Huruf pertama dijadikan kapital, melewati tanda baca pembuka seperti kurung atau tanda petik."""
+    for n, huruf in enumerate(kata):
+        if huruf.isalpha():
+            return kata[:n] + huruf.upper() + kata[n + 1:]
+    return kata
+
+
 def judul_kapital(teks: str) -> str:
-    """Huruf awal kapital tiap kata, kecuali kata sambung/kata depan (aturan 3.1.2 no. 6)."""
+    """Huruf awal kapital tiap kata, kecuali kata sambung/kata depan (aturan 3.1.2 no. 6).
+
+    Kata yang sudah ditulis dengan kapital khusus dibiarkan apa adanya: singkatan (UMKM, ROA) dan kata
+    berkapital di tengah (iPhone, e-Commerce, pH).
+    """
     kata = teks.strip().split()
     hasil = []
     for i, k in enumerate(kata):
-        if len(k) > 1 and k.isupper():          # singkatan (UMKM, BPS) dibiarkan
+        if any(huruf.isupper() for huruf in k[1:]):
             hasil.append(k)
         elif i > 0 and k.lower() in KATA_SAMBUNG:
             hasil.append(k.lower())
         else:
-            hasil.append(k[:1].upper() + k[1:])
+            hasil.append(_awal_kapital(k))
     return " ".join(hasil)
 
 

@@ -441,7 +441,9 @@ class PreviewHTML:
                 kaki = '<div class="foot r">nomor halaman, angka Arab</div>'
             else:
                 kaki = '<div class="foot g">nomor halaman, romawi kecil</div>'
-            lembar_html.append(f'<div class="label">{label}</div><div class="page">{isi}{kaki}</div>')
+            catatan = ('<div class="label-catatan">Ubah nama atau urutan judul di tab Bab, panel Kerangka laporan.</div>'
+                       if label == "Daftar Isi" else "")
+            lembar_html.append(f'<div class="label">{label}</div>{catatan}<div class="page">{isi}{kaki}</div>')
         return self._bungkus("".join(lembar_html), zoom)
 
     def _bungkus(self, isi, zoom):
@@ -451,6 +453,7 @@ class PreviewHTML:
         return f"""<!DOCTYPE html><html><head><meta charset="utf-8"><style>
         body {{ background:{meja}; margin:0; padding:4px 0 24px; font-family:"Avenir Next","Segoe UI",system-ui,sans-serif; }}
         .wrap {{ zoom:{zoom}; display:flex; flex-direction:column; align-items:center; }}
+        .label-catatan {{ font: 400 13px "Avenir Next","Segoe UI",system-ui,sans-serif; color:{redup}; margin:-2px 0 8px; width:{f['kertas_lebar_cm']}cm; }}
         .label {{ font: 600 17px "Avenir Next","Segoe UI",system-ui,sans-serif; color:{tinta}; margin:26px 0 8px; width:{f['kertas_lebar_cm']}cm; }}
         .label .ket {{ font-weight:400; color:{redup}; margin-left:8px; }}
         .label .bad, .label .ok {{ font-weight:500; margin-left:8px; font-variant-numeric:tabular-nums; }}

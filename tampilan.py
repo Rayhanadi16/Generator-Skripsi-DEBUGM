@@ -89,6 +89,23 @@ header[data-testid="stHeader"] { background:transparent; }
 @media (max-width:820px) { .kop { gap:0.9rem; } .kop h1 { font-size:1.7rem; } .kop-format { text-align:left; } }
 
 /* ---------- tahap: satu tingkat di atas tab, jadi dibuat lebih tegas daripada tab ---------- */
+[class*="st-key-kr_bab_"] { border-top:1px solid var(--garis); padding-top:0.55rem; margin-top:0.25rem; }
+[class*="st-key-kr_sub_"] { padding-left:1.25rem; }
+[class*="st-key-kr_ss_"] { padding-left:2.75rem; }
+@media (max-width:640px) {
+  /* di layar sempit judul mengisi satu baris penuh, supaya tombolnya selalu berjajar rapi di baris berikutnya */
+  [class*="st-key-kr_sub_"] > [data-testid="stElementContainer"]:has([data-testid="stMarkdown"]),
+  [class*="st-key-kr_ss_"] > [data-testid="stElementContainer"]:has([data-testid="stMarkdown"]) { flex-basis:100%; }
+  [class*="st-key-kr_sub_"], [class*="st-key-kr_ss_"] { gap:0.25rem; }
+  [class*="st-key-kr_sub_"] button, [class*="st-key-kr_ss_"] button { width:44px; min-width:44px; padding-left:0; padding-right:0; }
+  [class*="st-key-blok_"] > [data-testid="stElementContainer"]:has([data-testid="stMarkdown"]) { flex-basis:55%; }
+  [class*="st-key-kr_sub_"] { padding-left:0.25rem; }
+  [class*="st-key-kr_ss_"] { padding-left:1.25rem; }
+}
+[class*="st-key-blok_"] { border-top:1px solid var(--garis); padding-top:0.55rem; }
+.gbr-hilang { width:120px; min-height:72px; display:flex; align-items:center; justify-content:center;
+  padding:0.4rem; text-align:center; font-size:0.78rem; line-height:1.35; color:var(--redup);
+  background:var(--lapis2); border:1px dashed var(--tepi); border-radius:3px; }
 .stApp [data-testid="stButtonGroup"] [role="radiogroup"] { flex-wrap:wrap; gap:0.4rem; }
 .stApp button[data-variant="segmented_control"] {
   min-height:44px; padding:0.5rem 1rem; border:1px solid var(--tepi); border-radius:3px;
